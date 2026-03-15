@@ -33,7 +33,7 @@ We extract $\mathbf{h}^\ell$ from the source run and inject it into a target pro
 %
 \begin{equation}
 \label{eq:csd}
-\Phi_{\mathrm{C}}^\ell(\mathbf{h}^\ell) = \mathrm{softmax}\!\Big(W_u \circ \mathrm{LN} \circ f_{L-1} \circ \cdots \circ f_{\ell+1}\big(\mathbf{h}^\ell\big|_T\big)\Big)\bigg|_{\mathcal{T}}
+\Phi_{\mathrm{C}}^\ell(\mathbf{h}^\ell) \!=\! \mathrm{softmax}\!\Big(W_u \!\circ\! \mathrm{LN} \!\circ\! f_{L\text{-}1} \!\circ\! \cdots \!\circ\! f_{\ell+1}\!\big(\mathbf{h}^\ell\big|_T\big)\Big)\bigg|_{\mathcal{T}}
 \end{equation}
 %
 If $\arg\max \Phi_{\mathrm{C}}^\ell(\mathbf{h}^\ell) = t^*$, then $\mathbf{h}^\ell$ is \emph{self-contained}: it encodes sufficient information for the model's own decoding pipeline to produce the correct answer without attending back to the code. Within the Patchscopes framework \citep{ghandeharioun2024patchscopes}, this corresponds to the configuration $(Q,\, n_Q,\, \mathbb{I},\, \mathcal{M},\, \ell)$ --- using the question suffix as target, identity mapping, same model, swept across all layers.

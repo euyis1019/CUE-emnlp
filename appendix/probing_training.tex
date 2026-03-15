@@ -39,7 +39,7 @@ where $W^\ell \in \mathbb{R}^{11 \times d}$ and $\mathbf{b}^\ell \in \mathbb{R}^
 
 \begin{table}[h]
 \centering
-\small
+\resizebox{\columnwidth}{!}{%
 \begin{tabular}{lll}
 \toprule
 \textbf{Hyperparameter} & \textbf{Value} & \textbf{Rationale} \\
@@ -49,7 +49,8 @@ Regularization & L2, $C = 1.0$       & Prevents overfitting on high-dim.\ $\math
 Max iterations & 1000                & Ensures convergence across all layers \\
 Multi-class   & \texttt{multinomial}  & Joint optimization over all 11 classes \\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \caption{Probing classifier hyperparameters.}
 \label{tab:probe_hyperparams}
 \end{table}
