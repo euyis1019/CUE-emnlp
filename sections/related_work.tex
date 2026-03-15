@@ -4,7 +4,7 @@
 \paragraph{Mechanistic Interpretability of Language Models.}
 A growing body of work has developed tools to inspect the internal representations of transformer-based language models.
 The Logit Lens~\citep{nostalgebraist2020} projects intermediate hidden states directly onto the vocabulary distribution, revealing how predictions form across layers.
-Tuned Lens~\citep{belrose2023tunedlens} trains per-layer affine probes to stabilize early-layer decoding, and introduces \emph{prediction trajectory} and \emph{prediction depth}---the direct conceptual precursors to our First Correct Layer (FCL) metric.
+Tuned Lens~\citep{belrose2023eliciting} trains per-layer affine probes to stabilize early-layer decoding, and introduces \emph{prediction trajectory} and \emph{prediction depth}---the direct conceptual precursors to our First Correct Layer (FCL) metric.
 Patchscopes~\citep{ghandeharioun2024patchscopes} unifies these approaches under a general framework, injecting a source layer's representation into a target prompt and leveraging the model's own generation capacity to decode what is encoded at each layer.
 Linear probing~\citep{belinkov2022probing} tests whether specific attributes are linearly separable in hidden states; as \citet{belinkov2022probing} explicitly notes, detectability does not imply causal use---a distinction that directly motivates our notion of \emph{Information Brewing}.
 Arithmetic Without Algorithms~\citep{nikankin2025arithmetic} demonstrates that arithmetic computations are implemented by sparse MLP neurons acting as a bag of heuristics, and serves both as a structural template and a methodological reference point for our work.
