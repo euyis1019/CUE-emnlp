@@ -1,0 +1,41 @@
+\section{Related Work}
+\label{sec:related_work}
+
+\paragraph{Mechanistic Interpretability of Language Models.}
+A growing body of work has developed tools to inspect the internal representations of transformer-based language models.
+The Logit Lens~\citep{nostalgebraist2020} projects intermediate hidden states directly onto the vocabulary distribution, revealing how predictions form across layers.
+Tuned Lens~\citep{belrose2023tunedlens} trains per-layer affine probes to stabilize early-layer decoding, and introduces \emph{prediction trajectory} and \emph{prediction depth}---the direct conceptual precursors to our First Correct Layer (FCL) metric.
+Patchscopes~\citep{ghandeharioun2024patchscopes} unifies these approaches under a general framework, injecting a source layer's representation into a target prompt and leveraging the model's own generation capacity to decode what is encoded at each layer.
+Linear probing~\citep{belinkov2022probing} tests whether specific attributes are linearly separable in hidden states; as \citet{belinkov2022probing} explicitly notes, detectability does not imply causal use---a distinction that directly motivates our notion of \emph{Information Brewing}.
+Arithmetic Without Algorithms~\citep{nikankin2025arithmetic} demonstrates that arithmetic computations are implemented by sparse MLP neurons acting as a bag of heuristics, and serves both as a structural template and a methodological reference point for our work.
+Unlike these works, which focus on factual recall or arithmetic in natural language settings, we systematically adapt and apply these tools to code understanding tasks, revealing task-specific dynamics that do not arise in prior settings.
+
+\paragraph{Representation Analysis in Code LLMs.}
+Prior work on understanding code LLMs has largely focused on behavioral probing.
+\citet{hooda2024counterfactual} use counterfactual analysis to test whether models respond to changes in code predicates such as loop invariants and variable types, finding that models often rely on shallow pattern matching rather than genuine concept understanding.
+\textsc{AutoProbe}~\citep{autoprobe2025} trains attention-based probing classifiers that dynamically aggregate the most informative layers and token positions to assess code correctness, finding that optimal layers vary substantially across models and tasks---an engineering-level observation consistent with our FCL findings.
+Neuron-Guided Interpretation of Code LLMs~\citep{neuronguided2026} identifies task-relevant neurons via activation analysis and constructs interpretable code representations.
+However, their neuron attribution, like probing, operates at the level of linear separability: it can answer \emph{where} information is stored, but cannot distinguish between information that is encoded but latent and information that is genuinely output-ready.
+This is precisely the Probing--Patchscopes gap that our Information Brewing analysis captures.
+Moreover, their analysis aggregates over task categories without examining \emph{when} information becomes decodable or how this timing varies systematically across task types---a contrast that is central to our Information Processing Profile framework.
+
+\paragraph{Layer-wise Information Processing and Overthinking.}
+Several works have characterized the temporal dynamics of information processing within LLMs.
+\citet{wendler2024llamas} reveal a three-phase structure in multilingual models---input encoding, language-agnostic conceptual processing, and output projection---and show that the middle phase is linguistically dissociated from both input and output.
+We observe an analogous structure in the code domain: different task types effectively determine how far information progresses along this trajectory before becoming output-ready, with Computing tasks requiring substantially deeper processing than Copying tasks.
+This framing makes Information Brewing a natural consequence of tasks that demand extended conceptual processing before projection into the output space.
+\citet{selfverify2025} probe hidden states during chain-of-thought generation and find that models internally encode correctness signals before they surface in outputs, enabling early exit with a 24\% reduction in reasoning tokens; they also document token-level overthinking in reasoning chains.
+We observe an analogous but orthogonal phenomenon: \emph{layer-level} overthinking, where the first correct layer substantially precedes the final layer, and critically, where the magnitude of this gap is strongly task-specific rather than a uniform property of the model.
+
+\paragraph{Neuron-level Localization and Circuit Analysis.}
+Mechanistic interpretability has increasingly moved toward fine-grained structural attribution.
+\citet{wang2022ioi} use path patching to identify the complete circuit responsible for indirect object identification, establishing the paradigm for causal circuit discovery.
+\citet{nikankin2025arithmetic} extend this to arithmetic, isolating individual MLP neurons that encode heuristic patterns and verifying their causal necessity via ablation.
+\citet{universalneurons2024} examine which computational units are shared across models and tasks.
+Our work extends this localization agenda to the code domain, identifying task-specific neurons and applying \textsc{[MethodName]} to establish causal attribution for the information processing patterns we observe.
+
+\paragraph{Interpretability in Code Agent Scenarios.}
+As LLMs are deployed in code agents and software engineering pipelines, the interpretability of their layer-wise computations carries direct practical stakes.
+\citet{nanda2025resampling} argue that standard patching methods degrade in the branching, multi-step reasoning contexts characteristic of agent behavior.
+\citet{nanda2025pragmatic} identify code and tool-use scenarios as natural proxy tasks for grounding interpretability research in verifiable ground truth---a framing that motivates our choice of code execution primitives as the unit of analysis.
+Our early-exit findings translate directly to inference efficiency gains in code agent deployment.
