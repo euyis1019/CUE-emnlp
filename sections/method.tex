@@ -1,9 +1,42 @@
 \section{Method}
 \label{sec:method}
 
-% TODO: Write method section
-% Subsections to consider:
-% \subsection{Benchmark Design}
-% \subsection{Context-Stripped Decoding (CSD)}
-% \subsection{Linear Probing}
-% \subsection{Baseline Logit Subtraction}
+\subsection{Benchmark Design}
+\label{subsec:benchmark}
+
+To systematically probe how LLMs process code internally, we need tasks that isolate specific reasoning primitives while admitting clean analytical signals. We construct a benchmark along two classical axes from compiler theory: \textbf{data flow} (how values propagate through variables) and \textbf{control flow} (how execution paths are determined) \citep{aho2006compilers}.
+
+We define five task families spanning this spectrum. Each task instance is a source prompt $S = [C;\, Q]$, where $C$ is a code snippet and $Q$ is a question suffix (e.g., \texttt{\# The value of x is "}). Given $S$, a decoder-only transformer $\mathcal{M}$ with $L$ layers produces its standard output $\hat{t}_{\mathrm{out}} = \mathcal{M}(S)$ via autoregressive next-token prediction. The ground-truth answer $t^* \in \mathcal{D} = \{0, 1, \dots, 9\}$ is always a single digit, a deliberate constraint that ensures each answer corresponds to exactly one token and eliminates confounds from multi-token decoding.
+
+The five task families are:
+\textbf{(1)~Copying} --- pure variable assignment chains (e.g., \texttt{x=3; y=x; z=y}), parameterized by chain length. Tests multi-hop data flow tracking with no computation.
+\textbf{(2)~Computing} --- variable assignments interleaved with arithmetic (e.g., \texttt{x=3; y=x+2; z=y-1}), parameterized by compute density $\rho \in [0, 1]$, the fraction of assignment steps involving arithmetic. At $\rho = 0$ this reduces to Copying, providing a difficulty-matched control.
+\textbf{(3)~Conditional} --- nested if/else branches, parameterized by nesting depth. Tests control flow path selection.
+\textbf{(4)~Loop} --- for-loops with accumulators, parameterized by iteration count. Naturally interleaves control flow (termination) and data flow (accumulator update). We additionally provide unrolled variants to disentangle loop semantics from repeated computation.
+\textbf{(5)~Short-circuit} --- boolean expressions with \texttt{and}/\texttt{or} connectors, parameterized by nesting level. Tests dynamic execution path pruning under short-circuit evaluation.
+
+This design yields a continuous spectrum from pure data flow (Copying) through mixed (Loop) to pure control flow (Conditional, Short-circuit), enabling systematic comparison of internal processing dynamics across reasoning primitives. Full benchmark specifications and example instances are provided in \cref{app:benchmark}.
+
+% ------------------------------------------------------------------
+\subsection{Dual Diagnostic Framework}
+\label{subsec:dual_diagnostic}
+
+Standard evaluation tells us whether $\hat{t}_{\mathrm{out}} = t^*$ --- but not \emph{when} during the model's layer-wise computation the answer becomes available, nor in what form. We introduce two diagnostic functions that, applied to the same hidden state, provide complementary views of this process.
+
+Let $\mathbf{h}^\ell \in \mathbb{R}^d$ denote the hidden state at the last token position of layer $\ell$ when $\mathcal{M}$ processes $S$. Due to the causal attention mask, this position aggregates information from all preceding tokens, making it the natural locus for observing what the model ``knows'' at layer $\ell$. We define two diagnostic functions $\Phi_{\mathrm{P}}^\ell, \Phi_{\mathrm{C}}^\ell: \mathbb{R}^d \to \Delta^{|\mathcal{T}|}$ that map $\mathbf{h}^\ell$ onto the probability simplex over the classification space $\mathcal{T} = \mathcal{D} \sqcup \{\bar{d}\}$, where $\bar{d}$ aggregates all non-digit tokens into a single residual class.
+
+\paragraph{Linear Probing $\Phi_{\mathrm{P}}^\ell$.}
+A per-layer logistic regression classifier $\Phi_{\mathrm{P}}^\ell(\mathbf{h}^\ell) = \mathrm{softmax}(W^\ell \mathbf{h}^\ell + \mathbf{b}^\ell)$ tests whether $t^*$ is \emph{linearly separable} in the activation space at layer $\ell$. Success indicates that the information geometrically exists in $\mathbf{h}^\ell$, but says nothing about whether the model's own decoding pathway can access it. Training details are in \cref{app:probing}.
+
+\paragraph{Context-Stripped Decoding (CSD) $\Phi_{\mathrm{C}}^\ell$.}
+We extract $\mathbf{h}^\ell$ from the source run and inject it into a target prompt $T = Q$ (the question suffix alone, without the code $C$), replacing $T$'s last-token hidden state at layer $\ell$. The model then continues its forward pass from layer $\ell{+}1$ through $L{-}1$ with attention context restricted to $T$:
+%
+\begin{equation}
+\label{eq:csd}
+\Phi_{\mathrm{C}}^\ell(\mathbf{h}^\ell) = \mathrm{softmax}\!\Big(W_u \circ \mathrm{LN} \circ f_{L-1} \circ \cdots \circ f_{\ell+1}\big(\mathbf{h}^\ell\big|_T\big)\Big)\bigg|_{\mathcal{T}}
+\end{equation}
+%
+If $\arg\max \Phi_{\mathrm{C}}^\ell(\mathbf{h}^\ell) = t^*$, then $\mathbf{h}^\ell$ is \emph{self-contained}: it encodes sufficient information for the model's own decoding pipeline to produce the correct answer without attending back to the code. Within the Patchscopes framework \citep{ghandeharioun2024patchscopes}, this corresponds to the configuration $(Q,\, n_Q,\, \mathbb{I},\, \mathcal{M},\, \ell)$ --- using the question suffix as target, identity mapping, same model, swept across all layers.
+
+\paragraph{The key asymmetry.}
+$\Phi_{\mathrm{P}}^\ell$ asks whether an external linear classifier \emph{can} read the answer from $\mathbf{h}^\ell$; $\Phi_{\mathrm{C}}^\ell$ asks whether the model itself \emph{does} decode it. Their agreement and disagreement across layers constitutes our primary analytical signal, which we formalize next.

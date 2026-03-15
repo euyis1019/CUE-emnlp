@@ -1,0 +1,186 @@
+% Appendix A: Benchmark Design Details
+
+\section{Benchmark Design Details}
+\label{app:benchmark}
+
+This appendix provides detailed specifications for the five task families introduced in \cref{sec:method}, including representative code examples, parameterization ranges, dataset statistics, and design rationale.
+
+% ------------------------------------------------------------------
+\subsection{Task Family Specifications}
+\label{app:subsec:task_spec}
+
+Each task instance is a source prompt $S = [C;\, Q]$, where $C$ is a parameterized code snippet and $Q$ is the question suffix \texttt{\# The value of x is "}. Ground-truth answers are constrained to $t^* \in \{0, 1, \dots, 9\}$. Below we provide representative examples and parameter ranges for each family.
+
+\paragraph{(1) Copying --- Pure Variable Assignment Chains.}
+\emph{Reasoning primitive:} Data flow only (no computation). \emph{Parameterization:} Chain length $k$ (number of assignment hops).
+
+\begin{verbatim}
+a = 7
+b = a
+c = b
+x = c
+# The value of x is "
+\end{verbatim}
+
+The model must resolve a multi-hop reference chain $a \to b \to c \to x$ to retrieve the original literal value. No arithmetic is involved; the sole challenge is tracking data flow through variable aliasing.
+
+\paragraph{(2) Computing --- Variable Assignments with Arithmetic.}
+\emph{Reasoning primitive:} Data flow + arithmetic computation. \emph{Parameterization:} Compute density $\rho \in [0, 1]$, defined as the fraction of assignment steps involving an arithmetic operation. At $\rho = 0$, the task reduces to Copying, providing a difficulty-matched control.
+
+\begin{verbatim}
+a = 3
+b = a + 2
+c = b - 1
+x = c
+# The value of x is "
+\end{verbatim}
+
+This design allows continuous interpolation between pure data flow tracking ($\rho = 0$) and dense arithmetic reasoning ($\rho = 1$), enabling fine-grained analysis of how computation load affects internal processing dynamics.
+
+\paragraph{(3) Conditional --- Nested If/Else Branches.}
+\emph{Reasoning primitive:} Control flow (path selection). \emph{Parameterization:} Nesting depth $n$ (number of nested if/else levels).
+
+\begin{verbatim}
+a = 5
+b = 3
+if a > b:
+    if b > 2:
+        x = 8
+    else:
+        x = 1
+else:
+    x = 0
+# The value of x is "
+\end{verbatim}
+
+The model must evaluate boolean conditions and select the correct execution path at each nesting level. The task isolates control flow reasoning: values are given directly, and the challenge lies in determining \emph{which} branch is taken.
+
+\paragraph{(4) Loop --- For-Loops with Accumulators.}
+\emph{Reasoning primitive:} Control flow (iteration/termination) + data flow (accumulator update). \emph{Parameterization:} Iteration count $n_{\mathrm{iter}} \in \{1, 2, 3, 4\}$.
+
+\begin{verbatim}
+x = 0
+for i in range(3):
+    x = x + 2
+# The value of x is "
+\end{verbatim}
+
+\noindent\textbf{Unrolled variant} (same computation, no loop syntax):
+
+\begin{verbatim}
+x = 0
+x = x + 2
+x = x + 2
+x = x + 2
+# The value of x is "
+\end{verbatim}
+
+The unrolled variant serves as a critical control: it preserves the identical computation while removing loop syntax. By comparing the two, we disentangle the model's ability to understand loop semantics (iteration count, termination condition) from its ability to perform repeated arithmetic---a distinction invisible to end-task accuracy but revealed by layer-wise diagnostics.
+
+\paragraph{(5) Short-circuit --- Boolean Short-Circuit Evaluation.}
+\emph{Reasoning primitive:} Control flow (dynamic path pruning). \emph{Parameterization:} Connector type (\texttt{and}/\texttt{or}) and nesting level.
+
+\begin{verbatim}
+a = True
+b = False
+c = True
+x = 3 if (a and b) or c else 7
+# The value of x is "
+\end{verbatim}
+
+Short-circuit evaluation requires the model to determine whether subsequent sub-expressions need to be evaluated at all: \texttt{False and ...} short-circuits to \texttt{False} without evaluating the right operand; \texttt{True or ...} short-circuits to \texttt{True}. This tests the model's ability to dynamically prune execution paths---a form of control flow reasoning distinct from both conditional branching and loop execution.
+
+% ------------------------------------------------------------------
+\subsection{Task Spectrum Summary}
+\label{app:subsec:task_spectrum}
+
+\cref{tab:task_spectrum} summarizes how the five families span the data flow / control flow spectrum.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lccll}
+\toprule
+\textbf{Task} & \textbf{Data Flow} & \textbf{Control Flow} & \textbf{Key Param.} & \textbf{Core Challenge} \\
+\midrule
+Copying     & \checkmark\checkmark & ---          & Chain length $k$           & Multi-hop reference resolution \\
+Computing   & \checkmark\checkmark & ---          & Compute density $\rho$     & Arithmetic within data flow \\
+Loop        & \checkmark           & \checkmark   & Iter.\ count $n_{\mathrm{iter}}$ & Interleaved flow + accumulation \\
+Conditional & ---                  & \checkmark\checkmark & Nesting depth $n$    & Branch path selection \\
+Short-circuit & ---                & \checkmark\checkmark & Connector / nesting  & Dynamic path pruning \\
+\bottomrule
+\end{tabular}
+\caption{Task families along the data flow / control flow spectrum. From pure data flow (Copying) through mixed (Loop) to pure control flow (Conditional, Short-circuit).}
+\label{tab:task_spectrum}
+\end{table}
+
+% ------------------------------------------------------------------
+\subsection{Design Constraints and Rationale}
+\label{app:subsec:design_rationale}
+
+\paragraph{Single-digit answer constraint.} All task instances are designed such that $t^* \in \{0, 1, \dots, 9\}$. This is a deliberate design choice co-optimized with the diagnostic framework:
+\begin{itemize}
+    \item Each answer maps to exactly \textbf{one token} in all tokenizers we study, eliminating confounds from multi-token decoding in both probing and activation verbalization.
+    \item The 10-digit answer space, combined with a residual non-digit class $\bar{d}$, yields an 11-class classification problem that is tractable for per-layer logistic regression while remaining non-trivial (chance accuracy = 9.1\%).
+\end{itemize}
+
+\paragraph{Residual class $\bar{d}$.} Beyond the 10 digit classes, we introduce a residual class $\bar{d}$ that aggregates all non-digit tokens. For probing, $\bar{d}$ serves as an \emph{error sink}---if the probe's $\arg\max$ falls on $\bar{d}$, the representation has not yet consolidated toward any digit. For activation verbalization, $\bar{d}$ captures cases where the model outputs syntactic tokens (variable names, operators) instead of digit answers, which proves diagnostic for detecting overprocessing (\cref{sec:experiments}).
+
+\paragraph{Parameterization for difficulty control.} Each task family is parameterized along a dimension that monotonically increases difficulty while preserving the task's reasoning primitive identity. This enables within-task scaling analysis: how does the internal processing profile change as data flow chains grow longer, or as loop iterations increase?
+
+% ------------------------------------------------------------------
+\subsection{Dataset Statistics}
+\label{app:subsec:dataset_stats}
+
+\paragraph{Primary test set.} $N = 360$ instances across all six task variants (five families, with Loop split into \textsc{loop} and \textsc{loop\_unrolled}). After excluding never-correct samples---instances where neither probing nor activation verbalization ever produces the correct answer across all layers---181 valid instances remain for the main analysis.
+
+\paragraph{Extended set.} $N = 1{,}800$ instances used in Gini/Hoyer sparsity experiments (\cref{sec:experiments}).
+
+\cref{tab:dataset_stats} reports per-task statistics on the primary test set using Qwen2.5-Coder-7B.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Task} & \textbf{Never-Correct \%} & \textbf{BZ\textsubscript{loose}} & \textbf{Probe Stab.} & \textbf{OT \%} & \textbf{OT Width} \\
+\midrule
+Pure Copying     & 0\%    & 19.6 & 0.857 & 20\%   & 1.0 \\
+Short-circuit    & 3.9\%  & 19.6 & 0.661 & 4.8\%  & 2.6 \\
+Loop (unrolled)  & 6.9\%  & 20.7 & 0.749 & 7.6\%  & 3.4 \\
+Conditional      & 9.7\%  & 19.4 & 0.486 & 6.3\%  & 3.9 \\
+Loop             & 36.2\% & 20.7 & 0.716 & 10.3\% & 5.2 \\
+Computing        & 42.5\% & 20.8 & 0.354 & 46.2\% & 1.3 \\
+\bottomrule
+\end{tabular}
+\caption{Per-task dataset statistics on the primary test set ($N=360$, Qwen2.5-Coder-7B). BZ\textsubscript{loose}: mean brewing zone width in layers. Probe Stab.: fraction of brewing zone layers where the probe consistently predicts the correct answer. OT: overprocessing rate and mean width.}
+\label{tab:dataset_stats}
+\end{table}
+
+Key observations: (1)~Never-correct rate increases monotonically from Copying (0\%) to Computing (42.5\%), confirming the intended difficulty gradient. (2)~Brewing zone width ($\mathrm{BZ}_{\mathrm{loose}} \approx 20$ layers) is remarkably constant across tasks, suggesting it is an architecture-intrinsic property. (3)~Loop vs.\ Loop (unrolled): the never-correct rate differs by $5\times$ (36.2\% vs.\ 6.9\%), but the brewing zone width is identical (20.7 layers), confirming that loop syntax affects model \emph{capability} but not the \emph{mechanism} of information processing.
+
+% ------------------------------------------------------------------
+\subsection{Cross-Architecture Model Coverage}
+\label{app:subsec:models}
+
+\paragraph{Primary model family.} Qwen2.5-Coder series across five scales---0.5B, 1.5B, 3B, 7B, 14B---enabling within-family scaling analysis on a code-specialized model.
+
+\paragraph{Cross-architecture validation.} Five 7B-class models spanning different architectures and training regimes (\cref{tab:models}).
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lccc}
+\toprule
+\textbf{Model} & \textbf{Architecture} & \textbf{Code-Specific} & \textbf{Layers} \\
+\midrule
+Qwen2.5-Coder-7B    & Qwen2.5  & Yes & 28 \\
+Qwen2.5-7B          & Qwen2.5  & No  & 28 \\
+DeepSeek-Coder-6.7B & DeepSeek & Yes & 32 \\
+CodeLlama-7B        & Llama 2  & Yes & 32 \\
+Llama-3.1-8B        & Llama 3  & No  & 32 \\
+\bottomrule
+\end{tabular}
+\caption{Cross-architecture model coverage. This selection enables two controlled comparisons: (1)~code fine-tuning effect (Coder vs.\ base within the same architecture); (2)~architecture effect (Qwen2.5 with 28 layers vs.\ Llama-family with 32 layers).}
+\label{tab:models}
+\end{table}
