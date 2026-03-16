@@ -1,0 +1,88 @@
+%!TEX root = ../main.tex
+
+\section{What Different Code Primitives Reveal}
+\label{sec:code_findings}
+
+% 中文: §3 建立了一套经过验证的分析工具箱。现在我们把它应用到全部六类任务上，去回答本文最 code-specific 的问题：不同代码原语在模型内部究竟长什么样？本节的结论是强而清楚的：brewing 是共享的，但通向 resolution 的瓶颈是 primitive-specific 的。不同任务并不只是"难度不同"，而是会因为不同的内部原因而失败；这些原因已经体现在它们的 outcome fingerprint 和 brewing dynamics 中。
+
+This section is the paper's main code-specific contribution. \cref{sec:method} established the analytical toolkit; here we use it to map how different code primitives are processed inside the model. The conclusion is strong and consistent across settings: \textbf{brewing is shared, but the bottleneck to resolution is primitive-specific.} Different tasks do not merely vary in aggregate difficulty. They fail for different internal reasons, and those reasons are already visible in their outcome fingerprints and brewing dynamics.
+
+
+\subsection{Outcome Distributions Across Tasks}
+\label{subsec:outcome_distributions}
+
+% 请看图 4.1。
+% 中文: 请看图 4.1。Figure task_fingerprint 是本文面向 code track 的 hero figure。它在固定模型上比较六类任务的四路 outcome 分布。最直接的信息是：每一种任务都会诱导出自己独特的 outcome fingerprint。于是这张图不再只是 performance summary，而是一张 mechanistic fingerprint 图，直接展示模型是如何处理不同 code primitive 的。
+
+\cref{fig:task_fingerprint} is the code-track hero figure of the paper. It compares the four-way resolution taxonomy across all six tasks for a fixed model. The separation is immediate: each task induces a distinct distribution over Resolved, Overprocessed, Misresolved, and Unresolved. This figure is therefore not just a performance summary. It is a \textbf{mechanistic fingerprint} of how the model handles each code primitive.
+
+% 中文: 这条谱系上最容易的一端是 Copying。它以 Resolved 样本为主（[XX.X]\%），只有很小的 Overprocessed（[X.X]\%）和 Unresolved（[X.X]\%）尾部。这说明纯变量追踪往往能较早达到稳定 resolution，并把它保持到最后。
+
+The cleanest baseline is \textbf{Copying}. It is overwhelmingly Resolved ([XX.X]\%), with only small Overprocessed ([X.X]\%) and Unresolved ([X.X]\%) tails. Pure variable propagation is therefore not just easy in an accuracy sense; it is internally stable. Once the correct state forms, the model almost always keeps it.
+
+% 中文: 一旦加入算术，情况就明显改变。Computing 的 Resolved 比例更低（[XX.X]\%），Overprocessed 大幅上升（[XX.X]\%），同时还带来不可忽略的 Misresolved 或 Unresolved 成分（[XX.X]\%、[XX.X]\%）。这说明算术并不是在一个标量意义上简单"增加难度"，而是把模型带入了一种新的机制区间：它经常能形成正确的中间答案，却不能把它保持到最后。
+
+Adding arithmetic changes that regime qualitatively. \textbf{Computing} sharply reduces the Resolved rate ([XX.X]\%) and drives a large increase in Overprocessed ([XX.X]\%), together with substantial Misresolved and Unresolved mass ([XX.X]\%, [XX.X]\%). This is a strong result: arithmetic does not simply lower success uniformly. It specifically pushes the model into a post-resolution failure regime where correct intermediate computation is formed and then corrupted.
+
+% 中文: control-flow 更重的任务又呈现出另一种签名。Conditional 往往带有很大的 Misresolved 成分（[XX.X]\%），这与模型自信地收敛到错误分支结果的解释是一致的。Short-circuit 则表现出另一种 profile，例如 Unresolved 升高到 [XX.X]\%，这表明动态路径裁剪往往无法在现有深度内被干净完成。
+
+Control-flow-heavy tasks show a different failure mode entirely. \textbf{Conditional} is dominated by Misresolved samples ([XX.X]\%), indicating confident commitment to the wrong branch outcome rather than mere instability. \textbf{Short-circuit} exhibits elevated Unresolved at [XX.X]\%, showing that dynamic path pruning frequently fails before a stable resolution is reached. These are not minor variations on the same error. They are different computational failure modes.
+
+% 中文: 最干净的内部对照来自 Loop 与 Loop-unrolled。两者实现的是相同的底层算术更新，但只有前者要求模型处理循环语义。如果模型只是追踪重复计算，那么它们的 outcome profile 应当相近。事实并非如此。我们观察到显著分离：例如，Loop 的 Unresolved 可能明显高于 Loop-unrolled（[XX.X]\% vs. [XX.X]\%），即便它们的 Overprocessed 比例相近。这说明模型敏感的不只是计算内容，还包括这种计算是通过什么 code primitive 被表达出来的。
+
+The decisive controlled comparison is \textbf{Loop} versus \textbf{Loop-unrolled}. These tasks have matched underlying arithmetic updates; the only major difference is whether the computation is expressed through loop semantics or straight-line code. If the model were merely executing repeated arithmetic, the two distributions should align closely. They do not. Loop shows a substantially different fingerprint, for example with much higher Unresolved ([XX.X]\% vs.\ [XX.X]\%) despite comparable Overprocessed rates. This is direct evidence that the model is sensitive to the code primitive itself, not only to the underlying arithmetic content.
+
+% 中文: 因而，§4.1 的核心 claim 很明确：不同 code primitive 会诱导出不同的内部 failure fingerprint。一旦把 accuracy 拆成 Resolved、Overprocessed、Misresolved 和 Unresolved 四类，"code understanding" 就不再像一个单一标量能力，而更像一组不同的 resolution bottleneck。
+
+The claim of \cref{subsec:outcome_distributions} is therefore precise: \textbf{different code primitives induce different internal failure fingerprints.} Once accuracy is decomposed into outcome types, ``code understanding'' stops looking like one scalar capability and starts looking like a collection of distinct resolution bottlenecks.
+
+
+\subsection{Brewing Dynamics Across Tasks}
+\label{subsec:brewing_dynamics}
+
+% 中文: outcome distribution 告诉我们轨迹最后落到了哪里；而 §3.4 的 GT-free signal 则告诉我们为什么会落到那里。也就是说，§4.2 的任务是把 §4.1 中看到的 task-level 差异，进一步写成 mechanistic statement：不同 code primitive 之所以落入不同 outcome，并不是表面统计差异，而是因为它们卡在 brewing-to-resolution pipeline 的不同环节。
+
+Outcome distributions tell us where trajectories end up. The GT-free signals from \cref{subsec:gt_free} tell us \textbf{why} they end up there. This is the crucial next step. If \cref{subsec:outcome_distributions} establishes that tasks fail differently, \cref{subsec:brewing_dynamics} shows that they fail differently because they stress different parts of the brewing-to-resolution pipeline. In other words, the taxonomy differences are not superficial endpoint statistics; they arise from distinct internal dynamics.
+
+% 中文: Computing vs. Copying。由于当 $\rho = 0$ 时 Computing 会退化为 Copying，这一对任务最适合观察算术究竟改变了什么。相较于 Copying，Computing 会表现出更慢的 entropy descent、更晚或更窄的 probe-CSD agreement window，以及更长的平均 brewing duration，例如 [XX.X] vs. [XX.X] 层。随着 compute density 增加，这种效应还是渐进增强的，说明算术主要延长的是"信息已经存在但尚不可用"的那段过程。
+
+\paragraph{Computing vs.\ Copying.}
+Because Computing reduces continuously to Copying when $\rho = 0$, this pair gives the cleanest causal-style comparison for what arithmetic adds. Relative to Copying, Computing shows a slower entropy descent, a later and narrower probe-CSD agreement window, and a longer average brewing duration of [XX.X] versus [XX.X] layers. The trend strengthens monotonically with compute density. This pinpoints the bottleneck: arithmetic primarily lengthens the interval in which answer information exists but is not yet in a form the model can reliably act on (\cref{app:generality}).
+
+% 中文: Loop vs. Loop-unrolled。这一对比把 loop syntax 与 repeated arithmetic 分离开来。即使底层 value update 完全匹配，Loop 往往也会表现出更脆弱的 alignment pattern 和更渐进的 entropy decay，而 Loop-unrolled 更像普通直线计算。这说明"理解循环语义"会诱导出一条不同于"重复执行相同算术"的内部路径。
+
+\paragraph{Loop vs.\ Loop-unrolled.}
+This comparison isolates syntax and execution structure from raw arithmetic content. With matched value updates, Loop still exhibits a more fragile alignment trajectory, slower entropy collapse, and a weaker transition into stable low-entropy states than Loop-unrolled. That difference is decisive: the difficulty is not repeated addition itself, but the semantic burden of representing iteration. Loop comprehension therefore recruits a different internal pathway from equivalent straight-line computation (\cref{app:generality}).
+
+% 中文: Data flow vs. control flow。如果把整条任务谱系聚合起来看，会出现一个更广泛的分野。data-flow 主导任务通常具有更长的 brewing 和更平滑的 entropy descent；而 control-flow 主导任务更常出现更突然的晚期转变，以及更高的 Misresolved 成分。换句话说，data flow 更多是在考验表征稳定化，而 control flow 更多是在考验分支承诺。Loop 正好位于这两种机制区间之间，这和它的混合结构是一致的。
+
+\paragraph{Data flow vs.\ control flow.}
+Aggregating across the task spectrum reveals a broader structural divide. Data-flow-dominant tasks tend to show longer brewing with smoother entropy descent, indicating that the main challenge is stabilizing a correct latent state. Control-flow-dominant tasks, by contrast, show sharper late transitions and substantially higher Misresolved mass, indicating that the main challenge is committing to the correct execution path. Loop sits between these two regimes, exactly as expected from its mixed data-flow/control-flow character (\cref{app:generality}).
+
+% 中文: §4.2 的价值就在这里：它把 task difference 变成了真正的 mechanistic claim。不同 code primitive 并不只是"最后正确率不一样"，而是分别对应不同的 internal bottleneck：有的主要拖慢 resolution，有的主要破坏已经形成的正确状态，还有的主要把模型推向错误但稳定的收敛。单看 accuracy 根本无法把这些情况分开。
+
+The payoff of \cref{subsec:brewing_dynamics} is that it turns task differences into mechanistic statements. Some primitives mainly \textbf{delay} resolution. Some mainly \textbf{destabilize} correct states after they form. Others mainly drive the model toward \textbf{wrong but stable} commitments. Accuracy alone cannot separate these cases; brewing dynamics can.
+
+
+\subsection{Across Models and Scales}
+\label{subsec:across_models}
+
+% 中文: 上述任务依赖模式并不只属于某一个模型。我们在 code-specialized 与 general-purpose 模型之间、以及不同规模之间，都观察到相同的大体 brewing-to-resolution 结构；但与此同时，还能看到一个重要的 mechanism 与 capability 的分离。
+
+The findings above are not artifacts of one model or one scale. Across model families, training variants, and parameter counts, we observe the same high-level brewing-to-resolution scaffold together with the same primitive-specific separation in failure profiles. What changes is not whether the structure exists, but how much mass each model places on each outcome. This yields a clean dissociation between \textbf{mechanism} and \textbf{capability}.
+
+% 中文: 最干净的测试来自同一架构下的 Coder vs. Base。代码专门训练会显著改善 outcome distribution：例如，Coder 把整体 Resolved 从 [XX.X]\% 提升到 [XX.X]\%，并把 Unresolved 从 [XX.X]\% 降到 [XX.X]\%；其中在 [任务占位] 上增益尤为明显。可与此同时，FJC 的归一化层位在两个模型之间仍保持很高相关（例如 Pearson $r = [0.XX]$），平均偏移只有总深度的 [X.X]\%。这说明训练改变的更多是模型最终能 resolve 什么，而不是核心 resolution transition 倾向于发生在哪里。
+
+The cleanest test is \textbf{Coder vs.\ Base} within a matched architecture. Code-specialized training substantially improves the outcome distribution: the Coder model raises overall Resolved from [XX.X]\% to [XX.X]\% and reduces Unresolved from [XX.X]\% to [XX.X]\%, with especially large gains on [task placeholders]. Yet the normalized location of FJC remains highly correlated across the two models (e.g., Pearson $r = [0.XX]$), and the mean shift is only [X.X]\% of total depth. This is a strong dissociation. Training changes how often the model reaches successful resolution far more than it changes where the underlying resolution transition tends to occur (\cref{app:generality}).
+
+% 中文: 同一家族内的跨规模趋势呈现出类似图景。更大的模型会把概率质量从 Unresolved 转移到 Resolved，说明有效计算能力在提升。Overprocessed 则可能呈现非单调曲线，例如在中等规模达到峰值（[XX.X]\%）后再下降，这意味着"找到答案"的能力可能先出现，而"稳定保留答案"的能力稍后才补上。相比之下，归一化后的 brewing duration 在不同规模间却相对稳定，大致维持在总深度的 [XX.X]\% ± [X.X]\%。
+
+Scaling within a model family shows the same pattern from a different angle. Larger models consistently move probability mass from Unresolved into Resolved, reflecting increased effective computational capacity. Overprocessed can follow a non-monotonic trajectory across size, for example peaking at intermediate scales ([XX.X]\%) before declining, which indicates that the ability to reach the correct intermediate state emerges before the ability to preserve it robustly. By contrast, normalized brewing duration remains comparatively stable across scales at roughly [XX.X]\% $\pm$ [X.X]\% of total depth. Again, capability changes substantially while the computation scaffold remains strikingly stable (\cref{app:generality}).
+
+% 中文: 如果进一步纳入更多模型家族，同样的逻辑也会延伸到跨架构比较中：outcome distribution 会随着训练与能力改变，但 brewing 本身依然稳健存在。这类跨模型证据会进一步加强一种解释：brewing 反映的是 transformer 在代码上的一般计算属性，而具体 outcome mix 则更多反映学习到的能力。
+
+The same logic extends across architectures. Outcome distributions move with training data, specialization, and capacity, but the existence of brewing and the primitive-specific structure of resolution remain robust. This cross-model pattern strengthens the interpretation that brewing is a general property of transformer computation on code, whereas the exact outcome mix reflects learned skill and effective capacity.
+
+% 中文: 综合跨任务与跨模型结果可以看到，这个框架并不只是某个数据切片上的描述工具。它揭示的是一张结构化的 Code LLM weakness map：不同原语会因为不同的内部原因而失败；训练和 scaling 会改变这些失败模式之间的比例，但不会抹去那套共享的计算骨架。
+
+Taken together, \cref{sec:code_findings} delivers the paper's central empirical result: \textbf{Code LLMs do not possess one unified code-understanding ability. They exhibit a shared early computation scaffold, followed by primitive-specific bottlenecks to resolution.} This is why different tasks produce different outcome fingerprints, why matched controls such as Loop versus Loop-unrolled separate so cleanly, and why training and scale improve capability without erasing the underlying mechanism. The result is a structured weakness map of Code LLMs that goes well beyond benchmark accuracy.

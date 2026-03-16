@@ -1,0 +1,133 @@
+% Section 3: From Brewing to Resolution
+\section{From Brewing to Resolution: Structure and Signals}
+\label{sec:brewing}
+
+We now use the dual diagnostic framework to examine how code reasoning unfolds inside the model. Our narrative anchor is Qwen2.5-Coder-7B on the Computing task. This choice is made for clarity rather than exclusivity: the anchor setting exposes the full range of behaviors most cleanly, while the corresponding cross-task and cross-model evidence is deferred to \S4 and \cref{app:generality}. Experimental setup, filtering rules, and implementation details are in \cref{app:setup}.
+
+% 中文: 现在我们用 dual diagnostic framework 来直接观察模型内部的代码推理过程。叙事锚点选择为 Qwen2.5-Coder-7B 在 Computing 任务上的结果。该 setting 最干净地暴露了我们关心的全部行为范围；对应的跨任务与跨模型证据则放到 §4 和 app:generality。实验设置、过滤规则和实现细节见 app:setup。
+
+\subsection{The Brewing Process}
+\label{subsec:brewing_process}
+
+% 请看图 3.1。
+\cref{fig:main_trajectory} is the main qualitative map of the paper. It plots the layer-wise outputs of probing and CSD on representative Computing samples, marks the onset of answer emergence, and shows how trajectories later branch into distinct outcomes. This figure does three jobs at once: it establishes the existence of a structured process, identifies the critical transition point, and previews the downstream taxonomy.
+
+% 中文: Figure main_trajectory 是全文最关键的主图。它展示 probing 与 CSD 在代表性 Computing 样本上的逐层输出，标出答案开始形成的位置，并显示轨迹如何进一步分叉到不同 outcome。这张图同时承担三件事：建立结构化过程的存在、指出关键转折点、并预告后续 taxonomy。
+
+The earliest layers form a \textbf{pre-brewing} region. Here both diagnostic functions remain high-entropy and unstable: their mass diffuses across multiple digits and often falls onto the non-digit class $\bar{d}$. At this stage, the model is clearly transforming the input representation, but answer-relevant structure has not yet become accessible in either diagnostic view.
+
+% 中文: 最早的一段层构成 pre-brewing 区域。在这里两个诊断函数都表现为高熵且不稳定：概率质量分散在多个数字之间，也经常落到非数字类上。这个阶段表明模型当然已经在处理输入表征，但答案相关结构还没有在两个诊断视角下变得可访问。
+
+The next transition occurs when probing first becomes correct:
+\begin{equation}
+\label{eq:fpcl}
+\mathrm{FPCL}(S) = \min \{\ell \mid \hat{t}_{\mathrm{P}}^{\ell} = t^*\}.
+\end{equation}
+We call the region beginning at this point the \textbf{brewing} zone. In this zone, an external linear readout can already recover the answer, but the model's own stripped-context decoding still cannot. This asymmetry is the central empirical observation of the paper: code reasoning is not a last-layer jump. Information about the answer often appears before the model has organized that information into a form it can reliably decode itself. In the anchor setting, FPCL occurs at mean normalized depth [XX.X]\% ($\pm$ [X.X]\%), well before the final layers (\cref{app:lifecycle}).
+
+% 中文: 下一次关键转变发生在 probing 首次正确的时候。我们把从这里开始的区域称为 brewing。在该区域内，外部线性 readout 已经能够恢复答案，但模型自己的 stripped-context decoding 还做不到。这种不对称性就是全文最核心的经验观察：代码推理不是最后几层突然跳出来的。关于答案的信息往往会先出现，但还没有被组织成模型自己能稳定解码的形式。在锚点 setting 上，FPCL 出现在平均归一化深度 [XX.X]\%，明显早于最终层。
+
+Brewing ends at the first layer where probing and CSD are jointly correct:
+\begin{equation}
+\label{eq:fjc}
+\mathrm{FJC}(S) = \min \{\ell \mid \hat{t}_{\mathrm{P}}^{\ell} = t^* \land \hat{t}_{\mathrm{C}}^{\ell} = t^*\}.
+\end{equation}
+We treat this \textbf{First Joint Correct Layer (FJC)} as a \textbf{resolution point}, not a third phase. That distinction is important. The post-FJC region is not homogeneous; it is precisely where trajectories begin to separate into different outcomes. We therefore define brewing duration as
+\begin{equation}
+\label{eq:brewing_duration}
+\Delta_{\mathrm{brew}}(S) = \mathrm{FJC}(S) - \mathrm{FPCL}(S),
+\end{equation}
+which measures how long the answer is present but not yet self-decodable. In our anchor setting, the average brewing duration is [XX.X] layers, or [XX.X]\% of total depth, indicating that this intermediate process occupies a substantial fraction of the model's computation (\cref{app:lifecycle}).
+
+% 中文: Brewing 终止于 probing 与 CSD 首次同时正确的那一层。我们把这个 First Joint Correct Layer (FJC) 看作一个 resolution point，而不是第三个 phase。FJC 之后的区域并不均一；恰恰相反，它正是轨迹开始分化为不同 outcome 的地方。因此我们把 brewing duration 定义为 FJC - FPCL，它衡量的是答案已经存在、但还没有变成 self-decodable 表征的持续时长。在锚点 setting 中，平均 brewing duration 为 [XX.X] 层，即总深度的 [XX.X]\%。
+
+The resulting claim is simple but consequential: code reasoning proceeds through a structured internal process. The model first transforms the prompt into a high-entropy latent state, then enters a brewing period where answer information is available but not yet fully usable, and only later reaches a resolution point where the two diagnostic views converge.
+
+% 中文: 代码推理是一个结构化的内部过程。模型先把输入变换为高熵的潜在状态，然后进入 brewing 期（答案信息已经存在但尚不可完全使用），最后才达到两个诊断视角收敛的 resolution point。
+
+\subsection{Resolution Taxonomy}
+\label{subsec:resolution_taxonomy}
+
+Once the model reaches or fails to reach the resolution point, what happens next is not uniform. We find that nearly all trajectories can be organized by a compact decision tree into four \textbf{resolution outcomes}:
+
+% 中文: 一旦模型到达或未能到达 resolution point，后面的轨迹并不统一。我们发现几乎所有轨迹都可以通过一个紧凑的决策树被组织成四种 resolution outcome。
+
+\begin{table}[t]
+\centering
+\small
+\caption{Resolution taxonomy. The four outcome categories are defined by a two-level decision tree rooted at whether the First Joint Correct Layer (FJC) occurs.}
+\label{tab:resolution_taxonomy}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Outcome} & \textbf{Condition} & \textbf{Intuition} \\
+\midrule
+\textbf{Resolved} & FJC occurs and $\hat{t}_{\mathrm{out}} = t^*$ & The model reaches the correct answer and preserves it \\
+\textbf{Overprocessed} & FJC occurs and $\hat{t}_{\mathrm{out}} \neq t^*$ & The model reaches the correct answer but later computation destroys it \\
+\textbf{Misresolved} & FJC does not occur; tail CSD converges on a wrong digit & The model commits to a stable but incorrect answer \\
+\textbf{Unresolved} & FJC does not occur; tail CSD remains unstable & The model runs out of depth before settling \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The key split is whether FJC occurs. If it does, the only remaining question is whether the correct answer survives to the final output; this separates \textbf{Resolved} from \textbf{Overprocessed}. If FJC never occurs, we distinguish between two kinds of failure: \textbf{Misresolved}, where CSD stabilizes on an incorrect digit, and \textbf{Unresolved}, where no stable digit-level resolution is reached. Following the notation reference, Misresolved is operationalized using a tail window $\mathcal{W}$ and an average CSD-probability threshold of $1/2$; robustness analyses for this boundary are reported in \cref{app:outcomes}.
+
+% 中文: taxonomy 的第一层分裂是 FJC 是否发生。如果发生了，区分 Resolved 与 Overprocessed。如果 FJC 从未发生，再区分 Misresolved（CSD 最终稳定在错误数字）和 Unresolved（始终没有形成稳定的 digit-level resolution）。Misresolved 的操作化定义使用尾部窗口和平均 CSD 概率阈值 1/2；稳健性分析见 app:outcomes。
+
+In the anchor setting, the four categories account for [XX.X]\% Resolved, [XX.X]\% Overprocessed, [XX.X]\% Misresolved, and [XX.X]\% Unresolved, covering [XX.X]\% of all samples. The exact numbers are less important here than the structural point: this is not an ad hoc naming scheme. It is a near-exhaustive partition of observed behaviors, and each branch corresponds to a distinct mechanistic pattern rather than a superficial label (\cref{app:outcomes}).
+
+% 中文: 在锚点 setting 中，四类 outcome 分别占 [XX.X]\% Resolved、[XX.X]\% Overprocessed、[XX.X]\% Misresolved 和 [XX.X]\% Unresolved，总覆盖率达到 [XX.X]\%。更重要的不是具体数字，而是结构性事实：这不是 ad hoc 的命名，而是对观测行为的近乎穷尽划分。
+
+\subsection{Causal Validation}
+\label{subsec:causal_validation}
+
+So far, the brewing-to-resolution picture is descriptive. To argue that it reflects genuine computation rather than a convenient post hoc summary, we center three causal interventions on the resolution point. The unified logic is straightforward: if FJC and the four outcomes correspond to real internal structure, then interventions around them should have predictable, outcome-specific effects.
+
+% 中文: 到这里为止，brewing-to-resolution 图景仍然是描述性的。为了说明它反映的是真实计算而不是事后总结，我们围绕 resolution point 设计了三类因果干预。统一逻辑：如果 FJC 和四类 outcome 对应真实的内部结构，那么围绕它们的干预就应当产生可预测、且与 outcome 相关的效应。
+
+\paragraph{Activation patching at FJC.}
+We patch the hidden state at FJC using states from matched samples with different answers. If FJC is causally privileged, patching there should strongly redirect the final prediction. This is exactly what we observe: the answer-flip rate at FJC is [XX.X]\%, compared with only [XX.X]\% in matched pre-brewing layers and [XX.X]\% in matched post-resolution layers (\cref{app:causal}).
+
+% 中文: 在 FJC 层用答案不同但任务匹配的样本 hidden state 进行 patch。FJC 处的 answer-flip rate 为 [XX.X]\%，而匹配的 pre-brewing 层和 post-resolution 层分别只有 [XX.X]\% 与 [XX.X]\%。
+
+\paragraph{Layer skipping after FJC.}
+Overprocessed suggests that correct computation has already occurred but is later damaged. We therefore bypass tail layers after FJC and decode from the earlier state. On Overprocessed samples, this recovers the correct answer in [YY.Y]\% of cases, while affecting already-Resolved samples by only [Y.Y]\%. This asymmetric effect supports the interpretation of Overprocessed as a true post-resolution degradation rather than diagnostic noise (\cref{app:causal}).
+
+% 中文: Overprocessed 的含义是正确计算已经发生但后来被破坏。在 FJC 之后跳过尾部层并从更早的状态直接解码。在 Overprocessed 样本上恢复率为 [YY.Y]\%，而对已经 Resolved 的样本只造成 [Y.Y]\% 的影响。
+
+\paragraph{Re-injection for Unresolved.}
+If Unresolved means ``not finished'' rather than ``not capable'', then extra effective depth should rescue some samples. We test this by re-injecting late hidden states into a fresh forward pass. The rescue rate is [ZZ.Z]\%, showing that a substantial fraction of Unresolved cases contain incomplete but usable computation. Protocol details, layer sweeps, and failure cases are deferred to \cref{app:causal}.
+
+% 中文: 如果 Unresolved 的含义是没算完而不是根本不会，那么给模型额外的有效深度就应该能救回一部分样本。Re-injection 的 rescue rate 为 [ZZ.Z]\%，说明相当一部分 Unresolved 样本内部包含尚未完成但已可利用的计算。
+
+Taken together, these interventions validate the mechanistic reading of the taxonomy. FJC is not just the first layer where two diagnostics happen to agree; it is a causally meaningful transition. Overprocessed reflects damage after correct internal resolution. Unresolved reflects incomplete computation more often than total incapacity.
+
+% 中文: 综合来看，这三类干预为 taxonomy 提供了机制层面的验证。FJC 是具有因果意义的转折点。Overprocessed 反映的是正确 resolution 之后的破坏。Unresolved 更多反映未完成计算而非彻底无能力。
+
+\subsection{Observable Signatures in Model Distributions}
+\label{subsec:observable_signatures}
+
+The definitions above use ground-truth answers. A natural next question is whether the same structure is visible in the model's own distributions. Our answer is yes. The trajectories of $\Phi_{\mathrm{P}}^{\ell}$ and $\Phi_{\mathrm{C}}^{\ell}$ already contain strong GT-free signatures of the brewing-to-resolution process, and these signatures serve two roles at once: they validate the taxonomy internally, and they provide the analytical vocabulary for the cross-task comparisons in \S4.
+
+% 中文: 上面的定义都使用了 ground-truth answer。同样的结构能否直接从模型自己的分布中看出来？答案是肯定的。轨迹本身已经包含了强烈的 GT-free signal，同时承担两个角色：从内部验证 taxonomy，以及为 §4 的跨任务比较提供分析语言。
+
+We focus on three quantities. First, the \textbf{CSD entropy}
+\begin{equation}
+\label{eq:csd_entropy}
+H_{\mathrm{C}}^{\ell} = - \sum_{t \in \mathcal{T}} \Phi_{\mathrm{C}}^{\ell}[t] \log \Phi_{\mathrm{C}}^{\ell}[t]
+\end{equation}
+captures uncertainty in the model's self-decoding distribution. Second, the \textbf{entropy descent rate} summarizes how rapidly this uncertainty is shrinking across a local window. Third, the \textbf{probe--CSD agreement trajectory}
+\begin{equation}
+\label{eq:agreement_trajectory}
+A^{\ell} = \mathbb{1}\big[\arg\max \Phi_{\mathrm{P}}^{\ell} = \arg\max \Phi_{\mathrm{C}}^{\ell} \in \mathcal{D}\big]
+\end{equation}
+captures whether the two diagnostic views are pointing to the same digit, independent of ground truth.
+
+% 中文: 三类量：CSD entropy 刻画模型自解码分布中的不确定性；entropy descent rate 总结不确定性在局部窗口中下降的速度；probe-CSD agreement trajectory 捕获两个诊断视角是否指向同一个 digit，完全独立于 ground truth。
+
+These quantities separate the four outcome families with clear qualitative patterns. Resolved samples typically exhibit a sustained entropy drop and a stable agreement window. Overprocessed samples show the same early convergence but later entropy rebound or agreement collapse. Misresolved samples also stabilize, but around a wrong attractor. Unresolved samples remain high-entropy or fail to maintain alignment. Across settings, these differences are statistically significant, with full tests and robustness analyses deferred to \cref{app:gtfree}.
+
+% 中文: 这些量能够以清晰的定性模式把四类 outcome 区分开来。Resolved 表现为持续 entropy 下降和稳定 agreement window。Overprocessed 前期收敛但后期出现 entropy rebound 或 agreement collapse。Misresolved 稳定在错误吸引子附近。Unresolved 保持高熵或始终无法维持稳定对齐。差异具有统计显著性。
+
+The broader point is that the taxonomy is not an artifact of external labeling. GT-free signals recover the same behavioral boundaries that GT-based definitions reveal. This is why the structure established in \S3 is useful beyond one benchmark slice: it is reflected in the model's own internal distributions. In \S4, we will use these signals to compare how different code primitives shape brewing dynamics and failure patterns.
+
+% 中文: taxonomy 不是外部标签强加出来的产物。GT-free 信号能够恢复出与 GT-based 定义一致的行为边界。§3 建立的结构真实地反映在模型自身的内部输出分布中。到 §4 我们利用这些信号比较不同 code primitive 如何改变 brewing dynamics 和 failure pattern。
