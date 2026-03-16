@@ -2,6 +2,13 @@
 \section{The Internal Lifecycle of Code Reasoning}
 \label{sec:brewing}
 
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{resolution_taxonomy.png}
+\caption{Representative layer-wise trajectories from the anchor setting (Qwen2.5-Coder-7B, Computing). Probing becomes correct first (FPCL), CSD catches up later (FJC), and trajectories then diverge into four resolution outcomes: Resolved, Overprocessed, Misresolved, and Unresolved.}
+\label{fig:resolution_taxonomy}
+\end{figure*}
+
 % 中文: 对每个样本 $x$（source prompt $S_x$，ground-truth $t_x^*$），模型的一次前向传播产生一串随层深演化的 hidden states；$\Phi_{\mathrm{P}}^\ell$ 与 $\Phi_{\mathrm{C}}^\ell$ 在每一层各给出一个诊断分布，于是代码推理变成一条可沿深度直接观察的内部轨迹。
 For each sample $x$ (source prompt $S_x$, ground-truth answer $t_x^*$), a single forward pass produces a sequence of hidden states $\{\mathbf{h}_x^\ell\}_{\ell=0}^{L-1}$ that evolve across layers; $\Phi_{\mathrm{P}}^\ell$ and $\Phi_{\mathrm{C}}^\ell$ each yield a diagnostic distribution at every layer, turning code reasoning into an internal trajectory that can be directly observed along depth.
 %
@@ -11,11 +18,12 @@ For each sample $x$ (source prompt $S_x$, ground-truth answer $t_x^*$), a single
 % 中文: 记 $\hat{t}_{\mathrm{P}}^\ell$, $\hat{t}_{\mathrm{C}}^\ell$, $\hat{t}_{\mathrm{out}}$ 的定义。在最早的若干层（大约前 [XX]\%），两个诊断函数都处于高熵状态，概率质量分散在多个 digit 和 $\bar{d}$ 之间——模型在变换表征，但答案相关结构尚未在任一视角下浮现。这个 pre-brewing 区域的结束标志是 probing 首次正确的那一层。
 Let $\hat{t}_{\mathrm{P}}^\ell \triangleq \arg\max_{t \in \mathcal{T}} \Phi_{\mathrm{P}}^\ell(\mathbf{h}_x^\ell)[t]$, $\hat{t}_{\mathrm{C}}^\ell \triangleq \arg\max_{t \in \mathcal{T}} \Phi_{\mathrm{C}}^\ell(\mathbf{h}_x^\ell)[t]$, and $\hat{t}_{\mathrm{out}} \triangleq \mathcal{M}(S_x)$ denote the model's final output. In the earliest layers (roughly the first [XX]\%), both diagnostic functions remain high-entropy, with probability mass dispersed across multiple digits and the non-digit class $\bar{d}$---the model is transforming its representations, yet answer-relevant structure has not emerged under either diagnostic view. This \emph{pre-brewing} region ends at the layer where probing first becomes correct. We define
 %
-\begin{equation}
-\label{eq:fpcl_fjc}
-\mathrm{FPCL}(S_x) \triangleq \min\{\ell : \hat{t}_{\mathrm{P}}^\ell = t_x^*\},\qquad
-\mathrm{FJC}(S_x) \triangleq \min\{\ell : \hat{t}_{\mathrm{P}}^\ell = t_x^* \;\land\; \hat{t}_{\mathrm{C}}^\ell = t_x^*\}.
-\end{equation}
+\begin{align}
+\label{eq:fpcl}
+\mathrm{FPCL}(S_x) &\triangleq \min\{\ell : \hat{t}_{\mathrm{P}}^\ell = t_x^*\}, \\
+\label{eq:fjc}
+\mathrm{FJC}(S_x) &\triangleq \min\{\ell : \hat{t}_{\mathrm{P}}^\ell = t_x^* \;\land\; \hat{t}_{\mathrm{C}}^\ell = t_x^*\}.
+\end{align}
 
 % 中文: 在 anchor setting 上，FPCL 平均出现在归一化深度 [XX]\%，FJC 出现在 [XX]\%；这一先后关系在全部实验中均成立。我们将间隔称为 brewing——答案已经存在，但尚未变成模型自己可解码的形式。其长度平均为 [XX] 层（总深度的 [XX]\%），说明这段中间过程并非边缘现象。
 In the anchor setting, FPCL occurs at mean normalized depth [XX]\% and FJC at [XX]\%; the ordering $\mathrm{FPCL}(S_x) < \mathrm{FJC}(S_x)$ holds across all experimental configurations. We call the interval $[\mathrm{FPCL},\,\mathrm{FJC})$ \textbf{brewing}---the answer already exists, but has not yet been converted into a form the model itself can decode. Its length,
@@ -33,12 +41,14 @@ The answer is no. \cref{fig:resolution_taxonomy} illustrates the brewing process
 %
 \begin{equation}
 \label{eq:outcome_cases}
+\resizebox{0.91\columnwidth}{!}{$\displaystyle
 \mathrm{Outcome}(S_x) = \begin{cases}
 \textbf{Resolved} & \mathrm{FJC} \neq \varnothing \;\land\; \hat{t}_{\mathrm{out}} = t_x^* \\[3pt]
 \textbf{Overprocessed} & \mathrm{FJC} \neq \varnothing \;\land\; \hat{t}_{\mathrm{out}} \neq t_x^* \\[3pt]
-\textbf{Misresolved} & \mathrm{FJC} = \varnothing \;\land\; \displaystyle\max_{t \in \mathcal{D}}\, \bar{\Phi}_{\mathcal{W}}(t) \geq \tfrac{1}{2} \\[3pt]
-\textbf{Unresolved} & \mathrm{FJC} = \varnothing \;\land\; \displaystyle\max_{t \in \mathcal{D}}\, \bar{\Phi}_{\mathcal{W}}(t) < \tfrac{1}{2}
+\textbf{Misresolved} & \mathrm{FJC} = \varnothing \;\land\; \max_{t \in \mathcal{D}}\, \bar{\Phi}_{\mathcal{W}}(t) \geq \tfrac{1}{2} \\[3pt]
+\textbf{Unresolved} & \mathrm{FJC} = \varnothing \;\land\; \max_{t \in \mathcal{D}}\, \bar{\Phi}_{\mathcal{W}}(t) < \tfrac{1}{2}
 \end{cases}
+$}
 \end{equation}
 
 % 中文: 直觉上，Resolved 与 Overprocessed 的区分在于：模型曾在某层同时通过两个诊断，但后续层是否保住了正确答案。Overprocessed 意味着正确计算已经形成却被后续层破坏。Misresolved 与 Unresolved 则刻画两种不同的失败：前者收敛到了稳定但错误的答案，后者在现有深度内始终未形成稳定 resolution。

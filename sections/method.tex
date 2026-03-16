@@ -40,7 +40,9 @@ Information being present does not imply information being usable. We therefore 
 %
 \begin{equation}
 \label{eq:csd}
-\Phi_{\mathrm{C}}^\ell(\mathbf{h}^\ell) = \sigma\!\Big(W_u \circ \mathrm{LN} \circ F_{L-1} \circ \cdots \circ F_{\ell+1}\!\big(\mathbf{h}^\ell\big|_T\big) \;-\; \mathbf{z}_b\Big)\bigg|_{\mathcal{T}}
+\resizebox{0.91\columnwidth}{!}{$\displaystyle
+\Phi_{\mathrm{C}}^\ell(\mathbf{h}^\ell) = \sigma\!\Big(W_u \!\circ\! \mathrm{LN} \!\circ\! F_{L-1} \!\circ\! \cdots \!\circ\! F_{\ell+1}\!\big(\mathbf{h}^\ell\big|_T\big) - \mathbf{z}_b\Big)\bigg|_{\mathcal{T}}
+$}
 \end{equation}
 %
 where $\mathbf{z}_b$ is the logit obtained by running $T$ without any patching, representing the language prior. If $\arg\max \Phi_{\mathrm{C}}^\ell(\mathbf{h}^\ell) = t^*$, then $\mathbf{h}^\ell$ is \emph{self-contained}: the model's own decoding pipeline can produce the correct answer without attending back to the code. Within the Patchscopes framework this corresponds to the configuration $(Q,\, n_Q,\, \mathbb{I},\, \mathcal{M},\, \ell)$.

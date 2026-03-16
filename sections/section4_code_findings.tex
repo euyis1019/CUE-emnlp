@@ -8,6 +8,14 @@
 \subsection{Outcome Fingerprints and What They Expose}
 \label{subsec:outcome_fingerprints}
 
+\begin{figure*}[t]
+\centering
+% TODO: replace with actual figure file when available
+\fbox{\parbox{0.95\textwidth}{\centering\vspace{3cm}\textbf{[Placeholder: task\_fingerprint figure]}\vspace{3cm}}}
+\caption{Four-way outcome distributions across all six task families for Qwen2.5-Coder-7B. Each code primitive induces a distinctive outcome fingerprint.}
+\label{fig:task_fingerprint}
+\end{figure*}
+
 \cref{fig:task_fingerprint} displays the four-way outcome distributions of all six tasks side by side. The most immediate observation is that every code primitive induces its own distinctive outcome profile. This goes well beyond ``different accuracy''---failure modes that aggregate accuracy cannot distinguish are cleanly separated here. We first highlight the most diagnostic features of each task, then turn to three controlled comparisons.
 
 % 中文: Copying 作为谱系中最简单的一端，以 Resolved 为绝对主导（[XX]\%），Overprocessed 和 Unresolved 均为极小的尾部。纯变量传播一旦被正确追踪，模型几乎总能把结果保持到最后。这为后续所有比较提供了 baseline。
