@@ -3,7 +3,7 @@
 \section{Linear Probing Training Details}
 \label{app:probing}
 
-This appendix details the training procedure for the linear probing diagnostic $\Phi_{\mathrm{P}}^\ell$ introduced in \cref{sec:method}.
+This appendix details the training procedure for the linear probing diagnostic $\Phi_{\mathrm{P}}^\ell$ introduced in \cref{sec:method}. We train a \textbf{separate set of probes for each task family and each model}, so that probing accuracy reflects within-task linear separability without cross-task confounds.
 
 % ------------------------------------------------------------------
 \subsection{Hidden State Extraction}
@@ -11,23 +11,21 @@ This appendix details the training procedure for the linear probing diagnostic $
 
 For each task instance with source prompt $S = [C;\, Q]$, we perform a single forward pass through the target model $\mathcal{M}$ and extract the hidden state $\mathbf{h}^\ell \in \mathbb{R}^d$ at the \textbf{last token position} of every layer $\ell \in \{0, 1, \dots, L{-}1\}$. Due to the causal attention mask, the last token position aggregates information from all preceding tokens, making it the natural locus for probing what the model ``knows'' at each layer.
 
-Each hidden state $\mathbf{h}^\ell$ is paired with a label $t^* \in \mathcal{T} = \{0, 1, \dots, 9, \bar{d}\}$, where $t^*$ is the ground-truth digit and $\bar{d}$ is never used as a ground-truth label---it exists only as a prediction target (see below).
-
 % ------------------------------------------------------------------
 \subsection{11-Class Classification Setup}
 \label{app:subsec:probing_classes}
 
-A standard probing setup for this benchmark would use 10-class classification over $\mathcal{D} = \{0, 1, \dots, 9\}$. We extend this to \textbf{11 classes} by introducing the residual class $\bar{d}$, which aggregates all non-digit tokens into a single category.
+A standard probing setup for this benchmark would use 10-class classification over $\mathcal{D} = \{0, 1, \dots, 9\}$. We extend this to \textbf{11 classes} by introducing the residual class $\bar{d}$, which aggregates all non-single-digit outputs into a single category.
 
-\paragraph{Training label construction.} Ground-truth labels are always digit classes ($t^* \in \{0, \dots, 9\}$). To construct training samples for the $\bar{d}$ class, we include hidden states from layers where the model's final output token (via standard forward pass) is a non-digit token. This ensures the probe learns to distinguish between ``the representation points toward a digit'' and ``the representation has not yet consolidated toward any digit answer.''
+\paragraph{Constructing $\bar{d}$ samples.} For each task family, we generate additional code instances whose ground-truth answers are \emph{multi-digit} numbers (e.g., 10, 15, 23) by relaxing the single-digit constraint in the data generator. These instances are structurally identical to the in-distribution samples---same code templates, same variable naming, same question suffix---but their answers fall outside $\mathcal{D}$. This constitutes a \emph{near-OOD} design: the code reasoning required is the same; only the answer magnitude differs. Hidden states extracted from these instances provide training signal for the $\bar{d}$ class. The number of $\bar{d}$ samples is balanced to match the average per-digit class count.
 
-\paragraph{Rationale for $\bar{d}$.} The residual class serves as an \emph{error sink}: if $\arg\max \Phi_{\mathrm{P}}^\ell(\mathbf{h}^\ell) = \bar{d}$, the probe indicates that no digit is yet linearly separable in the activation space---the information is either absent or encoded in a format that a linear classifier cannot access. This gives the probing diagnostic a three-valued interpretation at each layer: (1)~correct digit, (2)~wrong digit, (3)~not yet a digit. Without $\bar{d}$, the probe would be forced to assign probability mass to some digit even when the representation carries no digit-relevant signal, inflating false positives in early layers.
+\paragraph{Rationale for $\bar{d}$.} The residual class serves as an \emph{error sink}: if $\arg\max \Phi_{\mathrm{P}}^\ell(\mathbf{h}^\ell) = \bar{d}$, the probe indicates that no single digit is linearly separable in the activation space at that layer. This gives the probing diagnostic a three-valued interpretation at each layer: (1)~correct digit, (2)~wrong digit, (3)~not yet a digit. Without $\bar{d}$, the probe would be forced to assign probability mass to some digit even when the representation carries no digit-relevant signal, inflating false positives in early layers.
 
 % ------------------------------------------------------------------
 \subsection{Per-Layer Classifier Training}
 \label{app:subsec:probing_training}
 
-We train \textbf{one independent classifier per layer} $\ell$, denoted $\Phi_{\mathrm{P}}^\ell$. Each classifier is a logistic regression model (multinomial, L2-regularized):
+For each task family and each model, we train \textbf{one independent classifier per layer} $\ell$, denoted $\Phi_{\mathrm{P}}^\ell$. Each classifier is a logistic regression model (multinomial, L2-regularized):
 %
 \begin{equation}
 \Phi_{\mathrm{P}}^\ell(\mathbf{h}^\ell) = \mathrm{softmax}(W^\ell \mathbf{h}^\ell + \mathbf{b}^\ell)
@@ -55,13 +53,19 @@ Multi-class   & \texttt{multinomial}  & Joint optimization over all 11 classes \
 \label{tab:probe_hyperparams}
 \end{table}
 
-\paragraph{Why logistic regression?} The choice of a linear classifier is deliberate and methodologically motivated. A linear probe tests whether the target information is \textbf{linearly separable} in the representation space---the weakest geometric condition for information presence. Using a more powerful classifier (e.g., MLP) would conflate ``the information exists'' with ``a nonlinear transformation can extract it,'' weakening the interpretive value of the necessary condition that probing is designed to establish. This follows established practice in representation probing \citep{belinkov2022probing, hewitt2019designing}.
+\paragraph{Why logistic regression?} A linear probe tests whether the target information is \textbf{linearly separable} in the representation space---the weakest geometric condition for information presence. Using a more powerful classifier (e.g., MLP) would conflate ``the information exists'' with ``a nonlinear transformation can extract it,'' weakening the interpretive value of probing as a necessary condition \citep{belinkov2022probing, hewitt2019designing}.
 
 % ------------------------------------------------------------------
 \subsection{Train/Test Split}
 \label{app:subsec:probing_split}
 
-For each task family, the dataset is split into training and test sets. The probing classifier is trained on the training split and evaluated on the held-out test split. Importantly, the \textbf{same test split} is used for both probing ($\Phi_{\mathrm{P}}^\ell$) and activation verbalization ($\Phi_{\mathrm{C}}^\ell$), ensuring that the two diagnostics are evaluated on identical instances and their layer-wise agreement/disagreement is computed on matched samples.
+Within each task family, instances are randomly split 80/20 into training and test sets. The split is at the \textbf{instance level}: all $L$ hidden states from a given code instance belong to the same partition, preventing information leakage across layers. The \textbf{same test split} is used for both probing ($\Phi_{\mathrm{P}}^\ell$) and CSD ($\Phi_{\mathrm{C}}^\ell$), ensuring that the two diagnostics are evaluated on identical instances and their layer-wise agreement is computed on matched samples.
+
+% ------------------------------------------------------------------
+\subsection{Probing Accuracy}
+\label{app:subsec:probing_accuracy}
+
+Across all task families, model scales, and layers, the probes achieve a mean test accuracy of \textbf{98.86\%}, confirming that the 11-class linear probing setup reliably recovers the encoded digit (or its absence) from each layer's hidden state.
 
 % ------------------------------------------------------------------
 \subsection{Evaluation Metrics}
