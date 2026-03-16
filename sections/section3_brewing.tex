@@ -57,16 +57,18 @@ Once the model reaches or fails to reach the resolution point, what happens next
 \small
 \caption{Resolution taxonomy. The four outcome categories are defined by a two-level decision tree rooted at whether the First Joint Correct Layer (FJC) occurs.}
 \label{tab:resolution_taxonomy}
-\begin{tabular}{@{}lll@{}}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{@{}lp{0.38\columnwidth}p{0.38\columnwidth}@{}}
 \toprule
 \textbf{Outcome} & \textbf{Condition} & \textbf{Intuition} \\
 \midrule
 \textbf{Resolved} & FJC occurs and $\hat{t}_{\mathrm{out}} = t^*$ & The model reaches the correct answer and preserves it \\
-\textbf{Overprocessed} & FJC occurs and $\hat{t}_{\mathrm{out}} \neq t^*$ & The model reaches the correct answer but later computation destroys it \\
+\textbf{Overprocessed} & FJC occurs and $\hat{t}_{\mathrm{out}} \neq t^*$ & Correct answer emerges but later computation destroys it \\
 \textbf{Misresolved} & FJC does not occur; tail CSD converges on a wrong digit & The model commits to a stable but incorrect answer \\
 \textbf{Unresolved} & FJC does not occur; tail CSD remains unstable & The model runs out of depth before settling \\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{table}
 
 The key split is whether FJC occurs. If it does, the only remaining question is whether the correct answer survives to the final output; this separates \textbf{Resolved} from \textbf{Overprocessed}. If FJC never occurs, we distinguish between two kinds of failure: \textbf{Misresolved}, where CSD stabilizes on an incorrect digit, and \textbf{Unresolved}, where no stable digit-level resolution is reached. Following the notation reference, Misresolved is operationalized using a tail window $\mathcal{W}$ and an average CSD-probability threshold of $1/2$; robustness analyses for this boundary are reported in \cref{app:outcomes}.
