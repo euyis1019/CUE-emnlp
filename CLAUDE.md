@@ -43,3 +43,11 @@
 | `experiment/experiment_reading_notes_v0.md` | `sections/experiments.tex` |
 | `Appendix/appendix_A_benchmark_v0.md` | `appendix/benchmark_details.tex` |
 | `Appendix/appendix_B_probing_training_v0.md` | `appendix/probing_training.tex` |
+
+### Git 配置
+
+已通过 `gh` 配置全局 git 身份（`git config --global`）：
+- `user.name`: Eric
+- `user.email`: euyis1019@users.noreply.github.com
+
+push 前先 `git fetch` 检查远程是否有新提交，如有则 `git pull --rebase` 后再 push。
