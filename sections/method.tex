@@ -1,67 +1,51 @@
 \section{Method}
 \label{sec:method}
 
-This section introduces only the analytical tools: the benchmark on which we study code reasoning, and the dual diagnostic framework used to read model states layer by layer. We intentionally defer all behavioral findings and derived state definitions to \cref{sec:brewing}.
+% 中文: Models. 我们分析了 Qwen2.5-Coder，DeepSeek-Coder，Qwen2.5，CodeLlama 与 Llama，详细模型 URL 见附录。正文中我们重点研究 Qwen2.5-Coder-7B。
 
-% 中文: 本节只介绍分析工具：我们用来研究代码推理的 benchmark，以及逐层读取模型状态的 dual diagnostic framework。所有行为现象和派生状态定义都刻意推迟到 §3。
+\paragraph{Models.}
+We analyze Qwen2.5-Coder, DeepSeek-Coder, Qwen2.5, CodeLlama, and Llama; full model URLs are listed in \cref{app:setup}. Throughout the main text we focus on Qwen2.5-Coder-7B.
 
-\subsection{Benchmark Design}
-\label{subsec:benchmark}
+% 中文: Benchmark. 为了研究内部代码推理，我们需要一组足够简单、能够隔离具体推理原语，但又足够丰富、能产生不同计算行为的任务。因此我们沿着 program analysis 中一个经典轴来设计六类任务：data flow 与 control flow。每个实例由短代码片段 C 和问题后缀 Q 组成，形成 source prompt S = [C; Q]。答案始终是单个数字 t* ∈ D = {0,1,...,9}，从而保证目标只对应一个 token，避免 multi-token decoding 带来的分析混淆。六类任务分别是：(1) Copying, (2) Computing, (3) Conditional, (4) Loop, (5) Loop-unrolled, (6) Short-circuit。代码片段保持短小，使逐层信号反映 reasoning primitive 而非长上下文效应；答案限定为单 digit token（0–9），为后续 diagnostic function 提供对齐的输出空间以支持跨层比较。完整细节与 cases 见附录。
 
-To study internal code reasoning, we need tasks that are simple enough to isolate specific primitives, yet rich enough to produce distinct computational behaviors. We therefore design six task families along a classical axis from program analysis: \textbf{data flow} versus \textbf{control flow} \citep{aho2006compilers, allen1970control, kildall1973unified, nielson1999principles}. Each instance is a short code snippet $C$ followed by a question suffix $Q$, forming a source prompt $S = [C;\,Q]$. The answer is always a single digit $t^* \in \mathcal{D} = \{0,1,\dots,9\}$, which ensures a one-token target and removes confounds from multi-token decoding.
+\paragraph{Benchmark.}
+To study internal code reasoning, we need tasks that are simple enough to isolate specific reasoning primitives yet rich enough to produce distinct computational behaviors. We therefore design six task families along a classical axis from program analysis: \textbf{data flow} versus \textbf{control flow} \citep{aho2006compilers, allen1970control, kildall1973unified, nielson1999principles}. Each instance consists of a short code snippet $C$ paired with a question suffix $Q$, forming a source prompt $S = [C;\,Q]$. The answer is always a single digit $t^* \in \mathcal{D} = \{0,1,\dots,9\}$, ensuring a one-token target and removing confounds from multi-token decoding. The six families are: (1)~Copying, (2)~Computing, (3)~Conditional, (4)~Loop, (5)~Loop-unrolled, and (6)~Short-circuit. Code snippets are kept intentionally short so that layer-wise signals reflect reasoning primitives rather than long-context effects; restricting the answer to a single digit token (0--9) provides a shared output space for the diagnostic functions defined below, enabling direct cross-layer comparison. Full details and example cases are given in \cref{app:benchmark}.
 
-% 中文: 为了研究内部代码推理，我们需要一组足够简单、能够隔离具体推理原语，但又足够丰富、能产生不同计算行为的任务。因此我们沿着 program analysis 中一个经典轴来设计六类任务：data flow 与 control flow。每个实例由短代码片段 C 和问题后缀 Q 组成，形成 source prompt S = [C; Q]。答案始终是单个数字，从而保证目标只对应一个 token，避免 multi-token decoding 带来的分析混淆。
+% 中文: Dual Diagnostic Framework.
+% 给定一个具有 L 层的 decoder-only transformer M，记 h^ℓ 为模型处理 source prompt S 时第 ℓ 层 last token 的 hidden state。由于 last position attend 到全部前文，它可以作为模型在该深度已完成何种计算的紧凑表示。我们围绕 h^ℓ 定义两个诊断函数 Φ_P^ℓ, Φ_C^ℓ: R^d → Δ^{|T|}，将其映射到分类空间 T = D ⊔ {d̄} 上的概率单纯形，其中 d̄ 将所有非 digit token 聚合为一个 residual class（|T| = 11）。全文记 σ(·) ≜ softmax(·)。
 
-The six task families are:
-
-\begin{itemize}
-    \item \textbf{Copying}: pure variable assignment chains, parameterized by chain length. This isolates multi-hop data flow tracking with no arithmetic.
-    \item \textbf{Computing}: assignments interleaved with arithmetic, parameterized by compute density $\rho \in [0,1]$. When $\rho = 0$, it reduces to Copying.
-    \item \textbf{Conditional}: nested \texttt{if}/\texttt{else} programs, parameterized by nesting depth. This tests branch selection and control-flow tracing.
-    \item \textbf{Loop}: accumulator-based \texttt{for} loops, parameterized by iteration count. This mixes repeated state updates with loop execution semantics.
-    \item \textbf{Loop-unrolled}: straight-line versions of Loop instances with the same underlying computation but without loop syntax, enabling a clean syntax-versus-computation comparison.
-    \item \textbf{Short-circuit}: boolean programs with nested \texttt{and}/\texttt{or}, parameterized by nesting depth, designed to test dynamic execution-path pruning.
-\end{itemize}
-
-% 中文: 六类任务分别是：Copying（纯变量赋值链）、Computing（赋值与算术交错）、Conditional（嵌套 if/else）、Loop（带累加器的 for 循环）、Loop-unrolled（与 Loop 等价但去掉循环语法的直线代码）、Short-circuit（带嵌套 and/or 的布尔程序）。
-
-Three design constraints are important. First, the code snippets are intentionally short, so that the resulting signals reflect reasoning primitives rather than long-context effects. Second, the answer space is restricted to a one-token digit classification problem, which lets us compare layer-wise readouts directly. Third, the benchmark is co-designed with the diagnostic framework: the class space, prompt format, and negative examples are all chosen to support reliable probing and CSD analysis. Full generation details, parameter ranges, and examples are deferred to \cref{app:benchmark}.
-
-% 中文: 有三个设计约束尤其重要。第一，代码片段被刻意保持得很短，从而让观测到的信号主要反映 reasoning primitive，而不是长上下文效应。第二，答案空间被限制为单 token 的 digit classification，这使得逐层 readout 可以直接比较。第三，benchmark 与诊断框架是协同设计的：class space、prompt format 和 negative examples 都服务于稳定的 probing 与 CSD 分析。
-
-% ------------------------------------------------------------------
 \subsection{Dual Diagnostic Framework}
 \label{subsec:dual_diagnostic}
 
-Given a decoder-only transformer $\mathcal{M}$ with $L$ layers, let $\mathbf{h}^\ell \in \mathbb{R}^d$ denote the last-token hidden state at layer $\ell$ when the model processes the source prompt $S$. Because the final position attends to the full preceding context, it serves as a compact readout of what the model has computed up to that depth. We define two diagnostic functions $\Phi_{\mathrm{P}}^\ell, \Phi_{\mathrm{C}}^\ell: \mathbb{R}^d \to \Delta^{|\mathcal{T}|}$ that map $\mathbf{h}^\ell$ onto the probability simplex over the classification space $\mathcal{T} = \mathcal{D} \sqcup \{\bar{d}\}$, where $\bar{d}$ aggregates all non-digit tokens into one residual class ($|\mathcal{T}| = 11$). We denote $\sigma(\cdot) \triangleq \mathrm{softmax}(\cdot)$ throughout.
+Given a decoder-only transformer $\mathcal{M}$ with $L$ layers, let $\mathbf{h}^\ell \in \mathbb{R}^d$ denote the last-token hidden state at layer $\ell$ when the model processes the source prompt $S$. Because the final position attends to the full preceding context, it serves as a compact representation of what the model has computed up to that depth. We define two diagnostic functions $\Phi_{\mathrm{P}}^\ell, \Phi_{\mathrm{C}}^\ell: \mathbb{R}^d \to \Delta^{|\mathcal{T}|}$ that map $\mathbf{h}^\ell$ onto the probability simplex over the classification space $\mathcal{T} = \mathcal{D} \sqcup \{\bar{d}\}$, where $\bar{d}$ aggregates all non-digit tokens into a single residual class ($|\mathcal{T}| = 11$). We write $\sigma(\cdot) \triangleq \mathrm{softmax}(\cdot)$ throughout.
 
-% 中文: 给定一个具有 L 层的 decoder-only transformer M，记 h^l 为模型处理 source prompt S 时第 l 层最后一个 token 的 hidden state。由于最后位置会关注其前面的全部上下文，它可以作为模型截至该深度已经完成何种计算的紧凑 readout。我们定义两个诊断函数，将 h^l 映射到分类空间上的概率单纯形，其中 d-bar 将所有非数字 token 聚合为一个 residual class。
+% 中文: 第一个诊断是 linear probing。对每一层训练一个逻辑分类器 Φ_P^ℓ(h^ℓ) = σ(W^ℓ h^ℓ + b^ℓ)，测试答案信息是否已经在 hidden state 中线性可读。这问的是一个必要条件：答案是否已经以简单形式存在？为避免 probe 被表面分布线索投机取巧，我们在十个 digit 类之外引入一个 near-OOD residual 类及对应训练样本（详见附录）。
 
 \paragraph{Linear Probing.}
-For each layer, we train a logistic classifier
+For each layer we train a logistic classifier
 %
 \begin{equation}
 \label{eq:probing}
 \Phi_{\mathrm{P}}^\ell(\mathbf{h}^\ell) = \sigma(W^\ell \mathbf{h}^\ell + \mathbf{b}^\ell),
 \end{equation}
 %
-which tests whether answer information is linearly recoverable from the hidden state. This diagnostic asks a necessary-condition question: is the answer already present in a simple, linearly readable form? To make the probe harder to game by superficial distributional cues, we augment the ten digit classes with a near-OOD residual class and corresponding training examples. Detailed probing setup and ablations are reported in \cref{app:probing}.
+which tests whether answer information is already linearly recoverable from the hidden state. This diagnostic asks a necessary-condition question: \emph{is the answer already present in a simple form?} To prevent the probe from exploiting superficial distributional cues, we augment the ten digit classes with a near-OOD residual class and corresponding training examples (details in \cref{app:probing}).
 
-% 中文: 对每一层，我们训练一个逻辑分类器，用来测试答案信息是否已经能够被线性读出。这个诊断问的是一个必要条件问题：答案是否已经以简单、线性可读的形式存在于 hidden state 中？为了避免 probe 被表面分布线索投机取巧，我们在十个 digit 类之外加入了一个 near-OOD residual 类及其对应训练样本。
+% 中文: 但信息存在不等于信息可用。为此我们构建第二个诊断：Context-Stripped Decoding (CSD)，基于 Patchscopes。具体做法是从 source run 中提取 h^ℓ，注入到一个只包含问题后缀的 target prompt T = Q 中，移除原始代码上下文 C。模型随后从第 ℓ+1 层到第 L−1 层继续前向传播，注意力上下文仅限于 T。为消除 target prompt 自身的 language prior confound，我们对 patching 后的 logit 做 baseline subtraction：
+% Φ_C^ℓ(h^ℓ) = σ(W_u ∘ LN ∘ F_{L-1} ∘ ⋯ ∘ F_{ℓ+1}(h^ℓ|_T) − z_b)|_T
+% 其中 z_b 是对 T 不做任何 patching 直接前向传播得到的 logit，代表 language prior。若 argmax Φ_C^ℓ(h^ℓ) = t*，则 h^ℓ 是 self-contained 的：模型自身的解码管道无需回看代码即可产出正确答案。在 Patchscopes 框架中对应配置 (Q, n_Q, I, M, ℓ)。
 
 \paragraph{Context-Stripped Decoding (CSD).}
-Probing tells us whether information is there; it does not tell us whether the model itself can use that information. We therefore build a second diagnostic on top of Patchscopes \citep{ghandeharioun2024patchscopes}. We extract $\mathbf{h}^\ell$ from the source run and inject it into a target prompt $T = Q$ that contains only the question suffix, removing the original code context $C$. The model then continues its forward pass from layer $\ell{+}1$ through $L{-}1$ with attention context restricted to $T$:
+Information being present does not imply information being usable. We therefore build a second diagnostic on top of Patchscopes \citep{ghandeharioun2024patchscopes}. We extract $\mathbf{h}^\ell$ from the source run and inject it into a target prompt $T = Q$ that contains only the question suffix, thereby removing the original code context $C$. The model then continues its forward pass from layer $\ell{+}1$ through layer $L{-}1$, with attention context restricted to $T$. To eliminate the confound of the target prompt's own language prior, we apply baseline logit subtraction:
 %
 \begin{equation}
 \label{eq:csd}
-\Phi_{\mathrm{C}}^\ell(\mathbf{h}^\ell) \!=\! \sigma\!\Big(W_u \!\circ\! \mathrm{LN} \!\circ\! f_{L\text{-}1} \!\circ\! \cdots \!\circ\! f_{\ell+1}\!\big(\mathbf{h}^\ell\big|_T\big)\Big)\bigg|_{\mathcal{T}}
+\Phi_{\mathrm{C}}^\ell(\mathbf{h}^\ell) = \sigma\!\Big(W_u \circ \mathrm{LN} \circ F_{L-1} \circ \cdots \circ F_{\ell+1}\!\big(\mathbf{h}^\ell\big|_T\big) \;-\; \mathbf{z}_b\Big)\bigg|_{\mathcal{T}}
 \end{equation}
 %
-If $\arg\max \Phi_{\mathrm{C}}^\ell(\mathbf{h}^\ell) = t^*$, then $\mathbf{h}^\ell$ is \emph{self-contained}: the model's own decoding pipeline can produce the correct answer without attending back to the code. Within the Patchscopes framework, this corresponds to the configuration $(Q,\, n_Q,\, \mathbb{I},\, \mathcal{M},\, \ell)$. To eliminate the confound of language model priors, we apply a baseline logit subtraction: $\Phi_{\mathrm{C,adj}}^\ell(\mathbf{h}^\ell) = \sigma(\mathbf{z}_{\mathrm{patched}}^\ell - \mathbf{z}_{\mathrm{baseline}})$, where $\mathbf{z}_{\mathrm{baseline}}$ is obtained by running $T$ without any patching (\cref{app:setup}).
+where $\mathbf{z}_b$ is the logit obtained by running $T$ without any patching, representing the language prior. If $\arg\max \Phi_{\mathrm{C}}^\ell(\mathbf{h}^\ell) = t^*$, then $\mathbf{h}^\ell$ is \emph{self-contained}: the model's own decoding pipeline can produce the correct answer without attending back to the code. Within the Patchscopes framework this corresponds to the configuration $(Q,\, n_Q,\, \mathbb{I},\, \mathcal{M},\, \ell)$.
 
-% 中文: Probing 告诉我们信息是否存在，但它不告诉我们模型自己能不能使用这份信息。因此我们基于 Patchscopes 构建第二个诊断。我们从 source run 中提取 h^l，并把它注入到只包含问题后缀的 target prompt T = Q 中，从而移除原始代码上下文 C。如果 argmax 等于 t*，那么 h^l 是自包含的。为消除语言模型先验的混淆，我们应用基线 logit 减法。
+% 中文: Φ_P^ℓ 衡量 information availability，Φ_C^ℓ 衡量 information readiness；沿深度扫描两者的一致与分歧，即可追踪代码推理在模型内部的展开过程。
 
 \paragraph{The key asymmetry.}
-$\Phi_{\mathrm{P}}^\ell$ asks whether an external linear readout can extract the answer; $\Phi_{\mathrm{C}}^\ell$ asks whether the model itself can decode the answer once the original context is stripped away. The first is about \textbf{information availability}; the second is about \textbf{information readiness}. Their agreement and disagreement across layers form the primary signal of our analysis. What these two functions reveal when scanned across depth is the subject of the next section.
-
-% 中文: 核心不对称性很简单：Phi_P 询问的是外部线性 readout 能否提取答案；Phi_C 询问的是在原始上下文被剥离后，模型自己能否把答案解码出来。前者关注 information availability，后者关注 information readiness。它们在不同层上的一致与分歧构成了本文分析的主信号。
+$\Phi_{\mathrm{P}}^\ell$ measures \textbf{information availability}---whether an external linear readout can extract the answer; $\Phi_{\mathrm{C}}^\ell$ measures \textbf{information readiness}---whether the model itself can decode the answer once the original context is stripped away. Scanning their agreement and disagreement across depth allows us to trace how code reasoning unfolds inside the model.
