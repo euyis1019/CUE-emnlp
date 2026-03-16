@@ -63,8 +63,11 @@ Once the model reaches or fails to reach the resolution point, what happens next
 \textbf{Outcome} & \textbf{Condition} & \textbf{Intuition} \\
 \midrule
 \textbf{Resolved} & FJC occurs and $\hat{t}_{\mathrm{out}} = t^*$ & The model reaches the correct answer and preserves it \\
+\midrule
 \textbf{Overprocessed} & FJC occurs and $\hat{t}_{\mathrm{out}} \neq t^*$ & Correct answer emerges but later computation destroys it \\
+\midrule
 \textbf{Misresolved} & FJC does not occur; tail CSD converges on a wrong digit & The model commits to a stable but incorrect answer \\
+\midrule
 \textbf{Unresolved} & FJC does not occur; tail CSD remains unstable & The model runs out of depth before settling \\
 \bottomrule
 \end{tabular}%
