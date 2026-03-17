@@ -23,19 +23,26 @@ $N$ denotes the corrected sample count after balancing across tasks (see text).}
 Task & $N$ & Res.\% & OT\% & MR\% & UR\% \\
 \midrule
 Pure Copying     & 200 & 79.0 & 21.0 & 0.0 & 0.0 \\
-Computing        & 207 & 29.4 & 33.4 & 20.4 & 16.8 \\
+Computing        & 207 & 33.5 & 45.9 & 12.4 & 8.1 \\
 Loop Unrolled    & 298 & 89.3 & 8.1  & 2.7 & 0.0 \\
 Loop             & 408 & 84.8 & 10.8 & 3.9 & 0.5 \\
 Conditional      & 542 & 82.7 & 11.4 & 4.4 & 1.5 \\
 Short-circuit    & 346 & 86.1 & 10.4 & 3.5 & 0.0 \\
 \midrule
-Weighted avg.    & 2001 & 78.8 & 13.8 & 5.1 & 2.2 \\
+Weighted avg.    & 2001 & 79.2 & 15.1 & 4.3 & 1.3 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Computing stands out as the most difficult family, with the lowest Resolved rate (29.4\%) and the highest rates of Overprocessed, Misresolved, and Unresolved outcomes.
-In contrast, all control-flow tasks (Loop, Conditional, Short-circuit) are predominantly Resolved ($>$82\%), with Overprocessed accounting for 10--21\% and Misresolved and Unresolved together below 6\%.
+Computing stands out as the most challenging family, with a Resolved rate
+of only 33.5\%---less than half that of any other task.
+Its failure profile is also unique: Overprocessed dominates at 45.9\%, yet
+it is the only task with substantial Misresolved (12.4\%) and Unresolved
+(8.1\%) rates, indicating that arithmetic introduces qualitatively
+different failure modes beyond simple answer degradation.
+All other task families are predominantly Resolved ($>$79\%), with
+Overprocessed as the primary failure mode (8--21\%) and Misresolved and
+Unresolved together below 6\%.
 Pure Copying shows no Misresolved or Unresolved samples, consistent with its minimal computational demand.
 
 \subsection{FPCL and FJC Layer Positions}
@@ -79,5 +86,5 @@ Consequently, the cross-task variation in brewing duration $\Delta_{\mathrm{brew
 % FJC 是否存在与最终输出正确率之间的强相关性数据。
 
 The absence of FJC is a near-necessary indicator of final failure: only 0.65\% of samples with $\mathrm{FJC} = \varnothing$ produce a correct output.
-Conversely, FJC existence is strongly associated with, but not sufficient for, final correctness: among samples with $\mathrm{FJC} \neq \varnothing$, 85.1\% are Resolved while 14.9\% are Overprocessed (i.e., the model once held the correct answer at FJC but lost it in subsequent layers).
+Conversely, FJC existence is strongly associated with, but not sufficient for, final correctness: among samples with $\mathrm{FJC} \neq \varnothing$, approximately 84.0\% are Resolved while 16.0\% are Overprocessed (i.e., the model once held the correct answer at FJC but lost it in subsequent layers).
 These statistics confirm that FJC marks a genuine computational milestone rather than a statistical artifact---its presence is highly predictive of success, and its absence is nearly deterministic of failure.

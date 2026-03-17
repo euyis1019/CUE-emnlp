@@ -83,17 +83,8 @@ Base-7B across the six tasks, obtaining $r = $ [XX] ($p < $ [XX]).
 The high correlation confirms that the layer at which CSD commits to an answer
 is architecturally determined and largely invariant to code-specialized
 fine-tuning.
-\cref{fig:app:coder_vs_base_fjc_scatter} visualizes this correspondence.
-
-\begin{figure}[h]
-\centering
-\includegraphics[width=0.55\linewidth]{figures/appendix/H_coder_vs_base_fjc_scatter.png}
-\caption{Scatter plot of normalized FJC positions: Qwen2.5-Coder-7B vs.\
-Qwen2.5-7B across six task families.  Each point is one task; the dashed
-line is $y{=}x$.  High correlation indicates that the commitment layer is
-architecture-dependent rather than training-data-dependent.}
-\label{fig:app:coder_vs_base_fjc_scatter}
-\end{figure}
+The high correlation confirms that the commitment layer is
+architecture-dependent rather than training-data-dependent.
 
 
 \subsection{Scaling Trends}
@@ -130,8 +121,7 @@ Scale & $L$ & Res.\% & OT\% & MR\% & UR\% & norm.\ $\Delta_{\mathrm{brew}}$\% \\
 \end{table}
 
 % 定性描述四个趋势，保持保守措辞。
-Several trends are apparent from \cref{tab:app:scaling_computing} and the
-corresponding visualization in \cref{fig:app:scaling_outcome_trend}:
+Several trends are apparent from \cref{tab:app:scaling_computing}:
 
 \begin{enumerate}
 \item \textbf{Resolved increases with scale.}
@@ -160,15 +150,6 @@ corresponding visualization in \cref{fig:app:scaling_outcome_trend}:
   brewing-to-resolution transition is an architectural invariant rather than a
   scale-dependent quantity.
 \end{enumerate}
-
-\begin{figure}[h]
-\centering
-\includegraphics[width=0.65\linewidth]{figures/appendix/H_scaling_outcome_trend.png}
-\caption{Outcome distribution on Computing as a function of Qwen2.5-Coder
-model scale.  Resolved (green) increases monotonically; Unresolved (red)
-decreases; Overprocessed (orange) peaks at intermediate scale.}
-\label{fig:app:scaling_outcome_trend}
-\end{figure}
 
 
 \subsection{Cross-Architecture Robustness}

@@ -93,13 +93,6 @@ As $\rho$ increases, the Resolved rate drops further, but the \emph{character} o
 This indicates that arithmetic demands do not simply make the task harder in a uniform sense; they \textbf{change the failure mechanism} from late-layer corruption (OT) to the model's inability to reach the correct answer at all (MR/UR).
 The mean brewing duration $\overline{\Delta}_{\mathrm{brew}}$ also contracts with increasing $\rho$, consistent with the probe detecting partial (but incorrect) information earlier when arithmetic noise contaminates the representation.
 
-\begin{figure}[h]
-\centering
-\includegraphics[width=\linewidth]{figures/appendix/G_computing_rho_sweep.png}
-\caption{Outcome distribution as a function of compute density $\rho$ for the Computing task. As $\rho$ increases, the failure profile shifts from OT-dominated to MR/UR-dominated.}
-\label{fig:app:rho_sweep}
-\end{figure}
-
 \paragraph{Chain length (steps) sweep.}
 
 \cref{tab:app:step_sweep} isolates the effect of chain length by reporting outcome distributions and layer-position statistics across steps $= 2, 3, 4, 5$.
@@ -129,13 +122,6 @@ Increasing chain length degrades outcomes \emph{even within fixed $\rho$ strata}
 At steps$\,{=}\,2$, the task resembles a simple lookup and achieves comparatively high Resolved rates; by steps$\,{=}\,5$, performance deteriorates substantially.
 Notably, FPCL shifts later with longer chains---the probe requires more layers to detect even partial correctness---while FJC remains relatively stable, compressing the brewing window $\Delta_{\mathrm{brew}}$.
 This compression mirrors the $\rho$-sweep pattern: harder instances leave less room for the representation to mature before the model must commit.
-
-\begin{figure}[h]
-\centering
-\includegraphics[width=\linewidth]{figures/appendix/G_computing_step_sweep.png}
-\caption{Outcome distribution and FPCL/FJC positions as a function of chain length (steps) for the Computing task. Longer chains push FPCL later while FJC remains stable, compressing the brewing window.}
-\label{fig:app:step_sweep}
-\end{figure}
 
 
 %% ========== G.3 ==========
@@ -211,20 +197,6 @@ Task & Difficulty & $N$ & Res.\% & OT\% & MR\% & UR\% \\
 
 \item \textbf{Loop vs.\ Loop Unrolled}: at the aggregate level, these two tasks have similar outcome distributions. However, the per-difficulty breakdown reveals that the \textbf{degradation curves differ in shape}: Loop shows a more gradual decline with iteration count, while Loop Unrolled degrades more steeply at iteration$\,{=}\,4$. This suggests that syntactic loop structure provides a processing scaffold that partially buffers against iteration-count difficulty, whereas unrolled code lacks this scaffold and becomes harder to track at high iteration counts.
 \end{itemize}
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\linewidth]{figures/appendix/G_per_difficulty_outcome.png}
-\caption{Stacked outcome distributions as a function of difficulty level for each task family. Non-Computing tasks remain predominantly Resolved at low difficulty but diverge in their failure signatures at high difficulty.}
-\label{fig:app:per_difficulty_outcome}
-\end{figure}
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\linewidth]{figures/appendix/G_loop_vs_unrolled_difficulty.png}
-\caption{Direct comparison of Loop and Loop Unrolled outcome distributions across iteration counts. The two tasks share similar aggregate profiles but differ in the shape of their degradation curves.}
-\label{fig:app:loop_vs_unrolled}
-\end{figure}
 
 
 %% ========== G.4 ==========
