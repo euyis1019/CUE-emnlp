@@ -3,29 +3,23 @@
 \section{Model URLs and Setup}
 \label{app:model_urls_and_setup}
 
-All models used in this work are publicly available on Hugging Face. We download the original pre-trained weights without further fine-tuning or quantization.
+All models used in this work are publicly available on Hugging Face.\footnote{\url{https://huggingface.co}} We download the original pre-trained weights without further fine-tuning or quantization.
 
 \paragraph{Primary model family (anchor + scaling).}
-Our main analyses use the Qwen2.5-Coder series \citep{hui2024qwen25coder} spanning five scales, paired with the general-purpose Qwen2.5 counterparts \citep{yang2024qwen25} of the same sizes:
+Our main analyses use the Qwen2.5-Coder series \citep{hui2024qwen25coder} spanning five scales, paired with the general-purpose Qwen2.5 counterparts \citep{yang2024qwen25} of the same sizes. The Hugging Face model identifiers are listed below:
 
-\begin{itemize}[nosep,leftmargin=1.5em]
-  \item \texttt{Qwen/Qwen2.5-Coder-0.5B} \quad\url{https://huggingface.co/Qwen/Qwen2.5-Coder-0.5B}
-  \item \texttt{Qwen/Qwen2.5-Coder-1.5B} \quad\url{https://huggingface.co/Qwen/Qwen2.5-Coder-1.5B}
-  \item \texttt{Qwen/Qwen2.5-Coder-3B} \quad\url{https://huggingface.co/Qwen/Qwen2.5-Coder-3B}
-  \item \texttt{Qwen/Qwen2.5-Coder-7B} \quad\url{https://huggingface.co/Qwen/Qwen2.5-Coder-7B}
-  \item \texttt{Qwen/Qwen2.5-Coder-14B} \quad\url{https://huggingface.co/Qwen/Qwen2.5-Coder-14B}
-  \item \texttt{Qwen/Qwen2.5-0.5B} \quad\url{https://huggingface.co/Qwen/Qwen2.5-0.5B}
-  \item \texttt{Qwen/Qwen2.5-1.5B} \quad\url{https://huggingface.co/Qwen/Qwen2.5-1.5B}
-  \item \texttt{Qwen/Qwen2.5-3B} \quad\url{https://huggingface.co/Qwen/Qwen2.5-3B}
-  \item \texttt{Qwen/Qwen2.5-7B} \quad\url{https://huggingface.co/Qwen/Qwen2.5-7B}
-  \item \texttt{Qwen/Qwen2.5-14B} \quad\url{https://huggingface.co/Qwen/Qwen2.5-14B}
+\begin{itemize}
+  \item \texttt{Qwen/Qwen2.5-Coder-\{0.5B, 1.5B, 3B, 7B, 14B\}}
+  \item \texttt{Qwen/Qwen2.5-\{0.5B, 1.5B, 3B, 7B, 14B\}}
 \end{itemize}
 
 \paragraph{Cross-architecture validation.}
-To verify that our findings generalize beyond the Qwen family, we additionally analyze:
+To verify that our findings generalize beyond the Qwen family, we additionally analyze three models from different architecture families:
 
-\begin{itemize}[nosep,leftmargin=1.5em]
-  \item \texttt{deepseek-ai/deepseek-coder-6.7b-base} \quad\url{https://huggingface.co/deepseek-ai/deepseek-coder-6.7b-base}
-  \item \texttt{codellama/CodeLlama-7b-hf} \quad\url{https://huggingface.co/codellama/CodeLlama-7b-hf}
-  \item \texttt{meta-llama/Llama-3.1-8B} \quad\url{https://huggingface.co/meta-llama/Llama-3.1-8B}
+\begin{itemize}
+  \item \texttt{deepseek-ai/deepseek-coder-6.7b-base} \citep{guo2024deepseekcoder}
+  \item \texttt{codellama/CodeLlama-7b-hf} \citep{roziere2023codellama}
+  \item \texttt{meta-llama/Llama-3.1-8B} \citep{llama3team2024}
 \end{itemize}
+
+All identifiers above can be directly used with the Hugging Face \texttt{transformers} library to download and load the corresponding model weights.
