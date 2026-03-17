@@ -59,3 +59,28 @@ Multi-class   & \texttt{multinomial}  & Joint optimization over all 11 classes \
 
 \paragraph{Probing accuracy.} Across all task families, model scales, and layers, the probes achieve a mean test accuracy of \textbf{98.86\%}, confirming that the 11-class linear probing setup reliably recovers the encoded digit (or its absence) from each layer's hidden state.
 
+% ------------------------------------------------------------------
+\subsubsection{Convergence Analysis}
+\label{app:subsec:probing_convergence}
+
+To verify that the linear probes converge reliably across all layers, we visualize the training dynamics using SGD with partial fit (200 epochs) on a representative setting (Qwen2.5-Coder-7B, Computing task).
+\cref{fig:app:training_curves} shows train/test accuracy and loss curves for five representative layers spanning the full model depth.
+All layers converge within the first 50 epochs, with deeper layers (closer to the unembedding) achieving higher accuracy, consistent with the progressive encoding of answer information through the brewing phase.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\columnwidth]{figures/appendix/C_training_curves.png}
+\caption{Probing training curves (SGD, 200 epochs) for five representative layers of Qwen2.5-Coder-7B on the Computing task. All layers converge rapidly; deeper layers achieve higher accuracy.}
+\label{fig:app:training_curves}
+\end{figure}
+
+\cref{fig:app:training_heatmap} provides a complementary view, displaying test accuracy and test loss as heatmaps across all 28 layers and training epochs.
+The clear vertical gradient confirms that convergence is achieved uniformly across layers, with no evidence of training instability or overfitting.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\columnwidth]{figures/appendix/C_training_curves_heatmap.png}
+\caption{Test accuracy (left) and test log loss (right) across all 28 layers and training epochs. The uniform convergence pattern confirms that linear probes are well-suited to this classification task.}
+\label{fig:app:training_heatmap}
+\end{figure}
+

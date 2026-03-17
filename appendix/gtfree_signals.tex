@@ -21,10 +21,11 @@ After resolution, $H_{\mathrm{C}}^\ell$ drops sharply for Resolved and Misresolv
 
 \paragraph{Probe--CSD Distributional Divergence.}
 To quantify the discrepancy between the probing distribution $\Phi_{\mathrm{P}}^\ell$ and the CSD distribution $\Phi_{\mathrm{C}}^\ell$ at each layer, we use the Jensen--Shannon divergence:
-\begin{equation}
+\begin{align}
 \label{eq:probe_csd_divergence}
-D_{\mathrm{sym}}^\ell = \frac{1}{2}\Big[\mathrm{KL}\big(\Phi_{\mathrm{P}}^\ell \,\|\, M^\ell\big) + \mathrm{KL}\big(\Phi_{\mathrm{C}}^\ell \,\|\, M^\ell\big)\Big], \quad M^\ell = \frac{1}{2}(\Phi_{\mathrm{P}}^\ell + \Phi_{\mathrm{C}}^\ell),
-\end{equation}
+D_{\mathrm{sym}}^\ell &= \frac{1}{2}\Big[\mathrm{KL}\big(\Phi_{\mathrm{P}}^\ell \,\|\, M^\ell\big) + \mathrm{KL}\big(\Phi_{\mathrm{C}}^\ell \,\|\, M^\ell\big)\Big], \nonumber \\
+M^\ell &= \frac{1}{2}(\Phi_{\mathrm{P}}^\ell + \Phi_{\mathrm{C}}^\ell),
+\end{align}
 where $\mathrm{KL}(P\|Q) = \sum_t P[t]\log\frac{P[t]}{Q[t]}$.
 During brewing, the divergence is high because probing has already identified the correct answer while CSD has not.
 After resolution, the divergence drops as both distributions converge.
@@ -42,6 +43,7 @@ We combine the two signals to discriminate the four outcomes without access to g
 \centering
 \caption{GT-free outcome discrimination performance on the anchor setting (Qwen2.5-Coder-7B). Brewing AUC measures the ability to detect brewing-phase boundaries; OT AUC and OT Recall measure Overprocessed detection; Overall Agree is the four-way agreement with true outcome labels.}
 \label{tab:app:gtfree_performance}
+\resizebox{\columnwidth}{!}{%
 \begin{tabular}{lccccc}
 \toprule
 Signal & Brewing AUC & OT AUC & OT Recall & Overall Agree \\
@@ -50,7 +52,8 @@ $H_{\mathrm{C}}^\ell$ only        & 0.988 & 0.425 & ---   & $\sim$50\% \\
 Non-digit signal only              & ---   & 0.915 & 83.1\% & $\sim$60\% \\
 Combined                           & 0.988 & 0.915 & 83.1\% & \textbf{87.0\%} \\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{table}
 
 The CSD entropy alone achieves near-perfect brewing detection (AUC 0.988), as the entropy drop precisely tracks the transition from dispersed to concentrated predictions.
