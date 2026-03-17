@@ -9,22 +9,75 @@
 \label{app:subsec:outcome_results_by_task}
 
 % 主要模型 × 六任务的 Resolved / Overprocessed / Misresolved / Unresolved 完整表格。
-% 预期效果：读者可查阅任意模型-任务组合的 outcome 分布。
 
-% TODO: 插入 outcome 分布表格
+\cref{tab:app:outcome_distribution} reports the four-way outcome distribution for the anchor model (Qwen2.5-Coder-7B) across all six task families.
+Sample counts $N$ reflect the corrected sizes after balancing across tasks: non-Computing tasks are subsampled to ensure that each family contributes proportionally to the aggregate statistics.
+
+\begin{table}[h]
+\centering
+\caption{Four-way outcome distribution for Qwen2.5-Coder-7B across all six task families.
+$N$ denotes the corrected sample count after balancing across tasks (see text).}
+\label{tab:app:outcome_distribution}
+\begin{tabular}{lrcccc}
+\toprule
+Task & $N$ & Res.\% & OT\% & MR\% & UR\% \\
+\midrule
+Pure Copying     & 200 & 79.0 & 21.0 & 0.0 & 0.0 \\
+Computing        & 207 & 29.4 & 33.4 & 20.4 & 16.8 \\
+Loop Unrolled    & 298 & 89.3 & 8.1  & 2.7 & 0.0 \\
+Loop             & 408 & 84.8 & 10.8 & 3.9 & 0.5 \\
+Conditional      & 542 & 82.7 & 11.4 & 4.4 & 1.5 \\
+Short-circuit    & 346 & 86.1 & 10.4 & 3.5 & 0.0 \\
+\midrule
+Weighted avg.    & 2001 & 78.8 & 13.8 & 5.1 & 2.2 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Computing stands out as the most difficult family, with the lowest Resolved rate (29.4\%) and the highest rates of Overprocessed, Misresolved, and Unresolved outcomes.
+In contrast, all control-flow tasks (Loop, Conditional, Short-circuit) are predominantly Resolved ($>$82\%), with Overprocessed accounting for 10--21\% and Misresolved and Unresolved together below 6\%.
+Pure Copying shows no Misresolved or Unresolved samples, consistent with its minimal computational demand.
 
 \subsection{FPCL and FJC Layer Positions}
 \label{app:subsec:fpcl_fjc_layer_positions}
 
-% 各任务和模型的归一化 FPCL、FJC 出现层位统计（均值、标准差、分布图）。
-% 预期效果：量化 brewing 的起止位置在不同条件下的变化。
+% 各任务和模型的归一化 FPCL、FJC 出现层位统计。
 
-% TODO: 插入 FPCL/FJC 层位统计
+\cref{tab:app:fpcl_fjc_positions} reports the mean FPCL, FJC, and brewing duration ($\Delta_{\mathrm{brew}}$) for each task family on Qwen2.5-Coder-7B.
+
+\begin{table}[h]
+\centering
+\caption{Per-task FPCL, FJC, and brewing duration ($\Delta_{\mathrm{brew}}$)
+for Qwen2.5-Coder-7B. All values in layers (total depth $L=28$);
+normalized depth in parentheses.}
+\label{tab:app:fpcl_fjc_positions}
+\begin{tabular}{lccc}
+\toprule
+Task & FPCL & FJC & $\Delta_{\mathrm{brew}}$ \\
+\midrule
+Pure Copying     & 1.7 (6\%)  & 19.6 (70\%) & 17.9 (64\%) \\
+Computing        & 9.6 (34\%) & 20.8 (74\%) & 11.2 (40\%) \\
+Loop Unrolled    & 4.2 (15\%) & 20.7 (74\%) & 16.6 (59\%) \\
+Loop             & 5.2 (18\%) & 20.7 (74\%) & 15.6 (56\%) \\
+Conditional      & 7.5 (27\%) & 19.4 (69\%) & 11.9 (43\%) \\
+Short-circuit    & 4.1 (15\%) & 19.6 (70\%) & 15.5 (55\%) \\
+\midrule
+Weighted avg.    & 5.6 (20\%) & 20.1 (72\%) & 14.5 (52\%) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Two patterns are noteworthy.
+First, FJC positions are remarkably stable across tasks, ranging from 69\% to 74\% of total depth.
+This suggests that the layer at which the model's own decoding pathway commits to an answer is largely task-independent.
+Second, FPCL varies substantially: Pure Copying achieves probe correctness as early as layer 1.7 (6\%), whereas Computing requires layer 9.6 (34\%).
+Consequently, the cross-task variation in brewing duration $\Delta_{\mathrm{brew}}$ is primarily driven by differences in FPCL rather than FJC---tasks that are easier to \emph{represent} internally begin brewing earlier, but all tasks converge to a similar resolution depth.
 
 \subsection{FJC Existence and Final Correctness}
 \label{app:subsec:fjc_correctness_correlation}
 
 % FJC 是否存在与最终输出正确率之间的强相关性数据。
-% 预期效果：为正文中 "FJC = ∅ 几乎等价于做错" 的 claim 提供完整支撑。
 
-% TODO: 插入 FJC-correctness 相关性数据
+The absence of FJC is a near-necessary indicator of final failure: only 0.65\% of samples with $\mathrm{FJC} = \varnothing$ produce a correct output.
+Conversely, FJC existence is strongly associated with, but not sufficient for, final correctness: among samples with $\mathrm{FJC} \neq \varnothing$, 85.1\% are Resolved while 14.9\% are Overprocessed (i.e., the model once held the correct answer at FJC but lost it in subsequent layers).
+These statistics confirm that FJC marks a genuine computational milestone rather than a statistical artifact---its presence is highly predictive of success, and its absence is nearly deterministic of failure.

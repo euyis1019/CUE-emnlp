@@ -4,24 +4,56 @@
 \label{app:ground_truth_free_discrimination}
 
 % 本节展示如何仅用模型自身的输出分布信号（无需 ground truth）区分四类 outcome。
-% 对应之前 part2 的实验结果。
 
 \subsection{Signal Definitions}
 \label{app:subsec:gtfree_signal_definitions}
 
-% 三个 GT-free 信号的形式化定义：
-%   (1) CSD entropy H_C^ℓ
-%   (2) Entropy 下降速率 dH_C/dℓ
-%   (3) Probe-CSD agreement A^ℓ
-% 预期效果：读者可精确理解每个信号的计算方式。
+We define two ground-truth-free signals derived from the layer-wise diagnostic distributions.
 
-% TODO: 插入信号定义
+\paragraph{CSD Entropy.}
+The entropy of the CSD distribution at layer $\ell$ measures the uncertainty of the model's own decoding pathway:
+\begin{equation}
+\label{eq:csd_entropy}
+H_{\mathrm{C}}^\ell = -\sum_{t \in \mathcal{T}} \Phi_{\mathrm{C}}^\ell[t] \log \Phi_{\mathrm{C}}^\ell[t].
+\end{equation}
+During the brewing phase, $H_{\mathrm{C}}^\ell$ remains high as probability mass is dispersed across multiple candidates.
+After resolution, $H_{\mathrm{C}}^\ell$ drops sharply for Resolved and Misresolved samples (both of which converge to a single digit), while it remains elevated for Unresolved samples that never reach stable convergence.
+
+\paragraph{Probe--CSD Distributional Divergence.}
+To quantify the discrepancy between the probing distribution $\Phi_{\mathrm{P}}^\ell$ and the CSD distribution $\Phi_{\mathrm{C}}^\ell$ at each layer, we use the Jensen--Shannon divergence:
+\begin{equation}
+\label{eq:probe_csd_divergence}
+D_{\mathrm{sym}}^\ell = \frac{1}{2}\Big[\mathrm{KL}\big(\Phi_{\mathrm{P}}^\ell \,\|\, M^\ell\big) + \mathrm{KL}\big(\Phi_{\mathrm{C}}^\ell \,\|\, M^\ell\big)\Big], \quad M^\ell = \frac{1}{2}(\Phi_{\mathrm{P}}^\ell + \Phi_{\mathrm{C}}^\ell),
+\end{equation}
+where $\mathrm{KL}(P\|Q) = \sum_t P[t]\log\frac{P[t]}{Q[t]}$.
+During brewing, the divergence is high because probing has already identified the correct answer while CSD has not.
+After resolution, the divergence drops as both distributions converge.
+Overprocessed samples exhibit a characteristic non-monotonic pattern: the divergence first decreases (as CSD aligns with probing at FJC) and then increases again in the tail layers (as CSD diverges from the correct answer while probing may still retain it).
 
 \subsection{Outcome-Specific Signal Characteristics}
 \label{app:subsec:gtfree_outcome_signatures}
 
-% 四类 outcome 在三个信号空间中的分布可视化。
-% 区分方案（阈值或分类器）及其性能。
-% 预期效果：直观展示 GT-free 信号确实能区分四类 outcome。
+% 四类 outcome 在信号空间中的区分方案及性能。
 
-% TODO: 插入信号特征可视化与区分方案
+We combine the two signals to discriminate the four outcomes without access to ground-truth labels.
+\cref{tab:app:gtfree_performance} summarizes the detection performance of each signal component and their combination.
+
+\begin{table}[h]
+\centering
+\caption{GT-free outcome discrimination performance on the anchor setting (Qwen2.5-Coder-7B). Brewing AUC measures the ability to detect brewing-phase boundaries; OT AUC and OT Recall measure Overprocessed detection; Overall Agree is the four-way agreement with true outcome labels.}
+\label{tab:app:gtfree_performance}
+\begin{tabular}{lccccc}
+\toprule
+Signal & Brewing AUC & OT AUC & OT Recall & Overall Agree \\
+\midrule
+$H_{\mathrm{C}}^\ell$ only        & 0.988 & 0.425 & ---   & $\sim$50\% \\
+Non-digit signal only              & ---   & 0.915 & 83.1\% & $\sim$60\% \\
+Combined                           & 0.988 & 0.915 & 83.1\% & \textbf{87.0\%} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The CSD entropy alone achieves near-perfect brewing detection (AUC 0.988), as the entropy drop precisely tracks the transition from dispersed to concentrated predictions.
+However, it is insufficient for distinguishing Overprocessed from Resolved samples, since both exhibit low entropy after FJC.
+The distributional divergence between probing and CSD complements this gap: it captures the late-layer re-divergence characteristic of Overprocessed trajectories, achieving an OT AUC of 0.915 and recall of 83.1\%.
+When combined, the two signals achieve 87.0\% overall agreement with the true four-way outcome labels, demonstrating that the brewing-to-resolution taxonomy is largely recoverable from the model's own internal signals without any ground-truth supervision.

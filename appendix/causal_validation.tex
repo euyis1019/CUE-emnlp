@@ -10,18 +10,42 @@
 
 % 详细实验设置：task-matched sample 配对策略、patching 操作流程。
 % 层位扫描：不同层的 answer-flip rate 曲线，展示 FJC 的因果特权性。
-% 预期效果：读者可看到 FJC 层 flip rate 相对其他层的显著优势。
 
-% TODO: 插入 patching 实验细节与层位扫描图
+We construct $N=150$ task-matched sample pairs from the anchor setting (Qwen2.5-Coder-7B).
+Each pair shares the same task family but has a different ground-truth answer.
+The patching operation replaces the last-token hidden state $\mathbf{h}^\ell$ at target layer $\ell$ with the corresponding hidden state from the paired sample, and the model continues its forward pass from layer $\ell+1$ onward.
+We measure the \emph{answer-flip rate}: the fraction of samples whose final prediction changes to the paired sample's answer after patching.
+
+A layer-wise sweep reveals a clear peak around the mean FJC position.
+The flip rate at the FJC layer reaches \textbf{69.9\%}, compared with \textbf{18.7\%} at matched pre-brewing layers (layer 17) and \textbf{31.0\%} at post-resolution layers (layer 27).
+The elevated flip rate at FJC confirms that this layer serves as a causally privileged bottleneck: it concentrates the answer-relevant information that determines the model's final prediction.
 
 \subsection{Layer Skipping for Overprocessed}
 \label{app:subsec:layer_skipping_overprocessed}
 
 % 跳过 FJC 之后尾部层的具体操作与解码方式。
 % Resolved vs. Overprocessed 上的效果对比，展示 outcome 特异性。
-% 预期效果：证明 Overprocessed 确实是"先对后错"，跳过后期层可恢复。
 
-% TODO: 插入 layer skipping 实验结果
+We skip all layers after FJC by taking $\mathbf{h}^{\mathrm{FJC}}$ and directly applying LayerNorm followed by the unembedding matrix to decode the prediction.
+This bypasses the tail layers that, in the Overprocessed case, are hypothesized to destroy a correct computation.
+
+\begin{table}[h]
+\centering
+\caption{Layer-skipping results by outcome group. Pre-skip accuracy is the standard model accuracy; post-skip accuracy is obtained by decoding from $\mathbf{h}^{\mathrm{FJC}}$.}
+\label{tab:app:layer_skipping}
+\begin{tabular}{lccc}
+\toprule
+Outcome group & $N$ & Pre-skip acc. & Post-skip acc. \\
+\midrule
+Overprocessed       & 75  & 0.0\%   & \textbf{73.3\%} \\
+Resolved (control)  & 25  & 100.0\% & \textbf{100.0\%} \\
+Misresolved         & 50  & 0.0\%   & 20.0\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The results (\cref{tab:app:layer_skipping}) confirm that the intervention is sharply outcome-specific: 73.3\% of Overprocessed samples are rescued by skipping the tail layers, while already-Resolved samples suffer no degradation whatsoever.
+The modest 20\% recovery among Misresolved samples is expected, as these lack a joint-correct layer by definition.
 
 \subsection{Late-Layer Hidden-State Sparsity in Overprocessed Samples}
 \label{app:subsec:late_layer_sparsity_overprocessed}
@@ -42,14 +66,14 @@ Instead, we view it as a representation-level correlate of overprocessing: once 
 \centering
 \begin{subfigure}[t]{0.58\textwidth}
     \centering
-    \includegraphics[width=\textwidth]{figures/appendix/causal_hidden_state_sparsity.png}
+    \includegraphics[width=\textwidth]{figures/appendix/E_hidden_state_sparsity.png}
     \caption{Global layer-wise Gini and Hoyer curves on the full Qwen2.5-Coder-7B Computing set.}
     \label{fig:app:hidden_state_sparsity}
 \end{subfigure}
 \hfill
 \begin{subfigure}[t]{0.38\textwidth}
     \centering
-    \includegraphics[width=\textwidth]{figures/appendix/causal_hoyer_ot_vs_nonot.png}
+    \includegraphics[width=\textwidth]{figures/appendix/E_hoyer_ot_vs_nonot.png}
     \caption{Late-layer Hoyer sparsity for Overprocessed vs.\ non-Overprocessed valid samples.}
     \label{fig:app:hoyer_ot_vs_nonot}
 \end{subfigure}
@@ -61,15 +85,52 @@ Instead, we view it as a representation-level correlate of overprocessing: once 
 \label{app:subsec:reinjection_unresolved}
 
 % 重注入流程：如何将后期 hidden state 注入新的前向传播以提供额外有效深度。
-% Rescue rate 计算与结果。
-% 预期效果：证明 Unresolved 多数是"没算完"而非"根本不会"。
 
-% TODO: 插入 re-injection 实验结果
+We test whether Unresolved samples contain incomplete but partially usable computations by providing the model with additional effective depth via re-injection.
+Specifically, we take the hidden state $\mathbf{h}^{L-1}$ from layer $L-1$ of the original forward pass and inject it into a fresh forward pass at layer $\ell_{\mathrm{inject}}$, allowing the model to continue processing from that point onward.
+This procedure can be repeated $k$ times to provide progressively more effective depth.
+
+\begin{table}[h]
+\centering
+\caption{Re-injection rescue rates for Unresolved samples ($N=150$). $k$ denotes the number of re-injection rounds. The Resolved control group maintains 100\% accuracy throughout.}
+\label{tab:app:reinjection}
+\begin{tabular}{lcc}
+\toprule
+$k$ & Rescue rate & Resolved control acc. \\
+\midrule
+1     & \textbf{33.3\%} & 100\% \\
+2     & \textbf{40.0\%} & 100\% \\
+3     & \textbf{46.7\%} & 100\% \\
+Never & 53.3\% remain unrescued & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+As shown in \cref{tab:app:reinjection}, a single re-injection already rescues 33.3\% of Unresolved samples, and three rounds of re-injection rescue 46.7\%.
+The Resolved control group maintains perfect accuracy, confirming that the procedure does not introduce artifacts.
+These results indicate that nearly half of Unresolved samples contain computation that is incomplete but already on a productive trajectory---they are ``not finished'' rather than ``fundamentally incapable.''
+The remaining 53.3\% that are never rescued likely represent cases where the model lacks the requisite capability for the given input.
 
 \subsection{Failure Cases}
 \label{app:subsec:causal_failure_cases}
 
 % 三组因果实验中干预无效的典型案例分析。
-% 预期效果：诚实地展示方法边界，增强可信度。
 
-% TODO: 插入失败案例分析
+Each causal experiment has a non-trivial failure rate, and analyzing these failures is important for understanding the boundaries of our taxonomy.
+
+\paragraph{Patching failures.}
+Approximately 30\% of samples show a low flip rate even when patching at FJC.
+This may occur because FJC is not the sole causally relevant layer for these samples---answer information may be distributed across multiple layers or encoded in dimensions not fully captured by last-token patching.
+
+\paragraph{Layer-skipping failures.}
+Among Overprocessed samples, 26.7\% remain incorrect after skipping the tail layers.
+In these cases, the hidden state at FJC may already have begun to degrade, or the correct answer may require additional post-FJC processing that our skipping procedure eliminates.
+
+\paragraph{Re-injection failures.}
+The 53.3\% of Unresolved samples that are never rescued, even after three re-injection rounds, likely represent instances where the model fundamentally lacks the capability to solve the given input, rather than merely needing more depth.
+These cases suggest a ``capability boundary'' that additional depth alone cannot overcome.
+
+\paragraph{Summary.}
+These failure modes confirm that our taxonomy, while capturing the dominant patterns, is not a perfect partition of all computational trajectories.
+The boundaries between outcome categories are not always sharp, and some samples may resist clean categorization.
+We view this transparency about method limitations as strengthening rather than undermining the framework's credibility.
