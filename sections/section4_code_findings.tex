@@ -3,49 +3,62 @@
 \section{What Different Code Primitives Reveal}
 \label{sec:code_findings}
 
-% 中文: Figure~\ref{fig:task_fingerprint} 把六类任务的四路 outcome 分布并排展示在同一张图中。最直接的观察是：每一种 code primitive 都诱导出自己独特的 outcome profile。这不只是"正确率不同"——accuracy 无法区分的 failure mode，在这里被拆开了。下面我们先点出各任务最有辨识度的特征，再进入三组 controlled comparison。
+% 中文: 整体 79.2% Resolved，但 aggregate 掩盖了两层差异：(1) Computing 是唯一 outlier（Resolved < 34%），(2) controlled difficulty increase 暴露各任务的 latent failure bottleneck。
 
 \subsection{Outcome Fingerprints and What They Expose}
 \label{subsec:outcome_fingerprints}
 
-\begin{figure*}[t]
+\begin{figure}[t]
 \centering
-\includegraphics[width=\textwidth]{task_fingerprint.png}
-\caption{Four-way outcome distributions across all six task families for Qwen2.5-Coder-7B. Each code primitive induces a distinctive outcome fingerprint.}
+\includegraphics[width=\columnwidth]{fingerprint.png}
+\caption{Outcome fingerprints for Qwen2.5-Coder-7B: each task (top) flows into one of four resolution outcomes (bottom), with ribbon width proportional to sample fraction. Computing is the sole task where substantial mass flows to Misresolved and Unresolved; the other five tasks route predominantly to Resolved, with Overprocessed as the main failure channel.}
 \label{fig:task_fingerprint}
-\end{figure*}
+\end{figure}
 
-\cref{fig:task_fingerprint} displays the four-way outcome distributions of all six tasks side by side. The most immediate observation is that every code primitive induces its own distinctive outcome profile. This goes well beyond ``different accuracy''---failure modes that aggregate accuracy cannot distinguish are cleanly separated here. We first highlight the most diagnostic features of each task, then turn to three controlled comparisons.
+\cref{fig:task_fingerprint} displays the four-way outcome distributions for all six task families. The aggregate picture is dominated by Resolved outcomes (79.2\% overall), confirming that Qwen2.5-Coder-7B handles most code reasoning tasks successfully. However, this aggregate masks two layers of mechanistic diversity. First, \textbf{Computing stands out as a clear outlier}: it is the only task with Resolved below 34\%, and the only one where Misresolved and Unresolved appear in substantial proportions. Second, \textbf{controlled difficulty increases} reveal task-specific failure bottlenecks that are invisible in the aggregate fingerprints. We examine these two layers in turn.
 
-% 中文: Copying 作为谱系中最简单的一端，以 Resolved 为绝对主导（[XX]\%），Overprocessed 和 Unresolved 均为极小的尾部。纯变量传播一旦被正确追踪，模型几乎总能把结果保持到最后。这为后续所有比较提供了 baseline。
+% 中文: Copying 以 Resolved 为主（79.0%），失败全部是 Overprocessed（21.0%），无 MR 或 UR。这建立了 baseline：简单变量追踪一旦失败，总是因为后层 corrupt，而非收敛到错误答案或无法收敛。
 
 \paragraph{Copying.}
-As the simplest end of the spectrum, Copying is overwhelmingly dominated by Resolved outcomes ([XX]\%), with Overprocessed and Unresolved forming only negligible tails. Once pure variable propagation is correctly tracked, the model almost always preserves the result through to the final output. This establishes the baseline for all subsequent comparisons.
+Copying is dominated by Resolved outcomes (79.0\%), with failures consisting entirely of Overprocessed (21.0\%)---no sample is Misresolved or Unresolved. This pure-OT failure profile establishes the baseline: when the model fails on simple variable tracking, it is always because late layers corrupt an already-correct answer, never because the model converges on a wrong answer or fails to converge at all.
 
-% 中文: Conditional 的 signature 以高 Misresolved 为标志（[XX]\%）。模型并不是在条件分支上"算不出来"，而是自信地收敛到了错误分支的结果。从 $H_{\mathrm{C}}^\ell$ 看，Conditional 的 Misresolved 样本往往在中后层就已经达到低熵——CSD 稳定了，只是稳定在错误答案上。这种"confident but wrong"的模式在 data flow 任务中几乎看不到。
-
-\paragraph{Conditional.}
-The hallmark of Conditional is its high Misresolved rate ([XX]\%). The model does not struggle to produce an answer for conditional branches---it converges confidently to the result of the \emph{wrong} branch. Examining $H_{\mathrm{C}}^\ell$ confirms this: Misresolved samples in Conditional often reach low entropy by the mid-to-late layers, meaning CSD has stabilized, but on an incorrect answer. This ``confident but wrong'' pattern is virtually absent in data-flow tasks.
-
-% 中文: Short-circuit 呈现另一种 profile：Unresolved 占比显著升高（[XX]\%），同时伴有可观的 Misresolved（[XX]\%）。compound boolean 中多个 subcondition 的联合判断与 and/or 的 short-circuit semantics 给模型施加了双重压力：既要正确评估每个子条件，又要在正确位置截断 evaluation。模型经常在现有深度内无法完成这个过程。
-
-\paragraph{Short-circuit.}
-Short-circuit presents yet another profile: Unresolved rises substantially ([XX]\%), accompanied by considerable Misresolved mass ([XX]\%). The joint evaluation of multiple subconditions in compound boolean expressions and the short-circuit semantics of \texttt{and}/\texttt{or} impose a dual pressure: the model must correctly evaluate each subcondition \emph{and} truncate evaluation at the right point. The model frequently fails to complete this process within its available depth.
-
-% 中文: Computing vs. Copying：算术改变了什么？由于 Computing 在 $\rho = 0$ 时退化为 Copying，这一对任务提供了干净的比较。fingerprint 上，Computing 的 Resolved 显著低于 Copying（[XX]\% vs. [XX]\%），而 Overprocessed 大幅上升（[XX]\% vs. [XX]\%）。算术的主要效应不是让模型"找错方向"（Misresolved 并没有显著增加），而是让已经形成的正确答案更难被保持到最终输出。brewing dynamics 支持同样的解读：相对于 Copying，Computing 的 $H_{\mathrm{C}}^\ell$ 下降更慢，$A^\ell$ agreement window 更晚且更窄，平均 $\Delta_{\mathrm{brew}}$ 为 [XX] vs. [XX] 层。随着 $\rho$ 从 0 增加到 1，这些效应单调增强（\cref{app:subsec:computing_density_sweep}）。算术延长的不是 pre-brewing，而是 brewing 本身——信息存在但尚不可用的中间状态被拉长了。
+% 中文: Computing vs. Copying：算术改变了什么？Computing 在 ρ=0 退化为 Copying，提供 controlled comparison。Computing 是唯一 Resolved < 34% 的任务（vs. Copying 79.0%），且四种 outcome 都有实质占比。ρ sweep 显示算术不只是让任务更难，而是引发 failure mode 的质变：从 OT 主导转向 MR+UR 主导。Δ_brew 的反直觉方向（Computing 11.2 < Copying 17.9）反映的是 Computing 样本更早偏离 resolution pathway。
 
 \paragraph{Computing vs.\ Copying: what does arithmetic change?}
-Because Computing degenerates to Copying when $\rho = 0$, this pair provides a clean comparison. In the fingerprint, Computing shows markedly lower Resolved ([XX]\% vs.\ [XX]\%) and substantially higher Overprocessed ([XX]\% vs.\ [XX]\%). The primary effect of arithmetic is not to send the model in the wrong direction---Misresolved does not increase appreciably---but to make an already-formed correct answer harder to preserve through to the final output. Brewing dynamics support the same reading: relative to Copying, Computing exhibits slower $H_{\mathrm{C}}^\ell$ descent, a later and narrower $A^\ell$ agreement window, and a longer mean $\Delta_{\mathrm{brew}}$ of [XX] versus [XX] layers. These effects strengthen monotonically as $\rho$ increases from 0 to 1 (\cref{app:subsec:computing_density_sweep}). What arithmetic lengthens is not the pre-brewing phase but brewing itself---the intermediate state in which information is present but not yet usable is stretched out.
+Because Computing degenerates to Copying when $\rho = 0$, this pair provides a controlled comparison. Computing is the sole task with Resolved below 34\% (vs.\ 79.0\% for Copying), and uniquely exhibits all four outcome categories in substantial proportions: Overprocessed dominates at 45.9\%, but Misresolved (12.4\%) and Unresolved (8.1\%) also appear---failure modes that are \emph{entirely absent} in Copying.
 
-% 中文: Loop vs. Loop-unrolled：syntax matters. 这是全文最干净的因果对照。两类任务的底层算术完全相同（matched initial value、operation、iteration count），唯一差异是 Loop 使用 for ... in range(...) 语法，而 Loop-unrolled 把同样的计算展开为 sequential statements。如果模型只是在做 repeated addition，两者的 fingerprint 应当相近。实际上它们显著分离：Loop 的 Unresolved 明显高于 Loop-unrolled（[XX]\% vs. [XX]\%），而两者的 Overprocessed 比例相近。从 dynamics 看，Loop 的 $A^\ell$ trajectory 更脆弱，entropy collapse 更慢且更不稳定。循环理解不能被还原为等价的 sequential arithmetic——模型在处理 loop semantics 时动用了一条不同的内部路径。
+A density sweep sharpens this picture. At $\rho = 0$ (pure multi-hop variable tracking, no arithmetic), Resolved is already only 40.0\%, with Overprocessed at 45.1\% and MR+UR together at 14.9\%. As $\rho$ increases to 1.0, Resolved drops to 16.4\% and MR+UR rises to 65.7\%, while Overprocessed \emph{decreases} to 17.9\% (\cref{app:subsec:computing_density_sweep}). The effect of arithmetic is therefore not merely quantitative---it triggers a qualitative shift in failure mode composition, from answer-degradation (Overprocessed) to answer-misdirection and non-convergence (Misresolved + Unresolved).
+
+Brewing dynamics reflect the same pattern but with a noteworthy reversal: Computing's mean $\Delta_{\mathrm{brew}}$ (11.2 layers) is \emph{shorter} than Copying's (17.9 layers). This does not indicate faster resolution; rather, it reflects the fact that many Computing samples exit the brewing stage into failure---their trajectories diverge toward Misresolved or Unresolved before reaching FJC. Shorter effective brewing signals earlier departure from the resolution pathway, not swifter completion of it.
+
+% 中文: Conditional 在 aggregate 上大部分 Resolved（82.7%），OT 是主要失败模式（11.4%），MR 仅 4.4%，UR 1.5%。"confident but wrong" 存在但不频繁。但 difficulty sweep 揭示了一个阈值效应：nesting depth 从 1 到 3，Resolved 从 98.0% 降至 62.8%，MR 从 0% 升至 11.5%。
+
+\paragraph{Conditional.}
+In aggregate, Conditional is largely Resolved (82.7\%), with Overprocessed (11.4\%) as the dominant failure mode and only modest Misresolved (4.4\%) and Unresolved (1.5\%) rates. The ``confident but wrong'' pattern---where the model selects the wrong branch yet converges stably---is present but infrequent at the task level. However, a controlled difficulty sweep reveals a sharp threshold: as nesting depth increases from 1 to 3, Resolved drops from 98.0\% to 62.8\%, and Misresolved rises from 0\% to 11.5\% (\cref{app:subsec:per_difficulty_breakdown}). Branch-selection errors are thus a \emph{latent} bottleneck that surfaces only under sufficient structural complexity.
+
+% 中文: Short-circuit 是最稳定的 control-flow 任务：Resolved 在最高难度（3 subconditions）仍超过 81%，UR 在所有难度都是 0%。失败主要是 OT（10.4%，在 3 subconditions 时升至 15.7%），不是 MR。compound boolean evaluation 并未从根本上挑战模型的收敛能力，瓶颈在于后层保持正确答案，类似 data-flow 任务。
+
+\paragraph{Short-circuit.}
+Short-circuit is the most stable control-flow task: Resolved remains above 81\% even at the highest difficulty (3 subconditions), and Unresolved is exactly 0\% across all difficulty levels---the model always commits to an answer. When it fails, the failure is predominantly Overprocessed (10.4\% overall, rising to 15.7\% at 3 subconditions), not Misresolved. This suggests that compound boolean evaluation, despite requiring joint assessment of multiple subconditions, does not fundamentally challenge the model's ability to converge; the bottleneck is preserving a correct answer through late layers, similar to data-flow tasks.
+
+% 中文: Loop vs. Loop-unrolled：syntax matters. 最干净的因果对照——相同底层算术，仅 syntax 不同。Aggregate 上两者接近（Loop 84.8% vs. Loop-unrolled 89.3%），但 difficulty gradient 暴露质的差异：Loop 在 iteration=2 出现 U 形谷底（56.8% Resolved），然后恢复到 97.1%；Loop-unrolled 单调下降，worst 在 iteration=4（65.5%）。
 
 \paragraph{Loop vs.\ Loop-unrolled: syntax matters.}
-This is the cleanest causal contrast in the paper. The two task types share identical underlying arithmetic (matched initial value, operation, and iteration count); the sole difference is that Loop uses \texttt{for ... in range(...)} syntax while Loop-unrolled unfolds the same computation into sequential statements. If the model were merely performing repeated addition, the two fingerprints should be similar. In practice they separate sharply: Loop has significantly higher Unresolved than Loop-unrolled ([XX]\% vs.\ [XX]\%), while the two show comparable Overprocessed rates. Dynamically, Loop's $A^\ell$ trajectory is more fragile, and entropy collapse is slower and less stable. Loop comprehension cannot be reduced to equivalent sequential arithmetic---the model engages a different internal pathway when processing loop semantics.
+This pair provides the cleanest causal contrast: identical arithmetic (matched initial value, operation, and iteration count), differing only in whether the computation is expressed as a \texttt{for} loop or as unrolled sequential statements. In the aggregate fingerprint, the two tasks are similar---Loop 84.8\% Resolved vs.\ Loop-unrolled 89.3\%---and neither shows substantial Misresolved or Unresolved.
 
-% 中文: Data flow vs. Control flow：两种不同的瓶颈。把上述观察聚合起来，一个更广泛的 pattern 浮现了。Data flow 主导的任务（Copying、Computing、Loop-unrolled）倾向于更长的 brewing、更平滑的 entropy descent，失败时更多是 Overprocessed——瓶颈在于把正确表征稳定地保持到最后（stabilization bottleneck）。Control flow 主导的任务（Conditional、Short-circuit）则更常出现 Misresolved 和 Unresolved——瓶颈在于选择正确的执行路径并贯彻这个 commitment（commitment bottleneck）。Loop 正好位于两者之间，既有 data flow 式的长 brewing，又有 control flow 式的 Unresolved 升高，与它的 mixed 性质一致。完整的跨任务数据与 per-difficulty-level 分析见 \cref{app:subsec:per_difficulty_breakdown}。
+The critical difference emerges in the difficulty gradient. Loop exhibits a striking non-monotonic pattern: Resolved drops to 56.8\% at iteration${=}2$ (with Overprocessed spiking to 36.4\%) before recovering to 97.1\% at iteration${=}4$. Loop-unrolled, in contrast, degrades monotonically, reaching its worst point at iteration${=}4$ (65.5\% Resolved). The inverted difficulty curves suggest that the model processes loop syntax through a qualitatively different internal pathway. One possible explanation is that iteration${=}2$ falls in a worst-case regime: the loop body executes enough times to require genuine iterative tracking (unlike iteration${=}1$, which reduces to a single pass), but not enough to establish a repetitive pattern that the model can exploit (as may happen at iteration${=}4$).
 
-\paragraph{Data flow vs.\ control flow: two different bottlenecks.}
-Aggregating the observations above, a broader pattern emerges. Data-flow-dominant tasks (Copying, Computing, Loop-unrolled) tend toward longer brewing, smoother entropy descent, and Overprocessed as the primary failure mode---the bottleneck lies in stably preserving a correct representation through to the end (a \emph{stabilization bottleneck}). Control-flow-dominant tasks (Conditional, Short-circuit) instead exhibit elevated Misresolved and Unresolved---the bottleneck lies in selecting the correct execution path and following through on that commitment (a \emph{commitment bottleneck}). Loop sits squarely between these two regimes, displaying both the extended brewing characteristic of data flow and the elevated Unresolved characteristic of control flow, consistent with its mixed nature. Full cross-task data and per-difficulty-level breakdowns are provided in \cref{app:subsec:per_difficulty_breakdown}.
+% 中文: 难度作为机制多样性的透镜。六个任务在 aggregate 层面的主要失败模式都是 OT（后层 corruption）。任务身份本身在 aggregate 水平上并不能尖锐地分离失败 profile。差异在 controlled difficulty increase 下才显现，每个任务揭示出不同的失败轨迹。
+
+\paragraph{Difficulty as the lens for mechanistic diversity.}
+Across all six tasks, the aggregate failure mode is predominantly Overprocessed---late-layer corruption of a once-correct answer. Task identity alone does not sharply separate failure profiles at the aggregate level. The differentiation appears under controlled difficulty increases, where each task reveals a distinct failure trajectory:
+\begin{itemize}[nosep]
+\item \textbf{Computing} ($\rho$ sweep): qualitative shift from OT to MR+UR---multi-hop tracking is the primary bottleneck, arithmetic amplifies it into a different failure regime.
+\item \textbf{Conditional} (depth 1$\to$3): Misresolved emerges as a latent bottleneck at high nesting---branch-selection errors surface only under structural complexity.
+\item \textbf{Loop} (iteration sweep): non-monotonic U-shape reveals a syntax-specific fragility absent in the unrolled equivalent.
+\item \textbf{Short-circuit} (conditions 1$\to$3): remains OT-dominant even at high difficulty, behaving more like a data-flow task.
+\end{itemize}
+Full per-difficulty breakdowns are in \cref{app:subsec:per_difficulty_breakdown}.
 
 
 \subsection{Across Models and Scales}
@@ -53,24 +66,24 @@ Aggregating the observations above, a broader pattern emerges. Data-flow-dominan
 
 % 中文: 上述 task-dependent 模式并不只属于一个模型。我们在 Qwen2.5-Coder 与 Qwen2.5（同架构，code-specialized vs. general-purpose）之间、以及 0.5B 到 14B 的规模范围内，都观察到相同的 brewing-to-resolution 结构。但 outcome 分布并不是在所有维度上同步变化——这暴露了一个清晰的 mechanism 与 capability 的分离。
 
-\begin{figure}[t]
+\begin{figure*}[t]
 \centering
-\includegraphics[width=\columnwidth]{brewing_stability.png}
-\caption{Brewing structure stability across scaling, training, and architecture. (a) KDE of normalized First Joint Correct Layer (FJC) positions. (b) Violin plots of normalized brewing duration, showing consistent brewing scaffolds despite varying capability.}
+\includegraphics[width=\textwidth]{brewing_stability.png}
+\caption{Brewing structure across scaling, training, and architecture. (a) KDE of normalized First Joint Correct Layer (FJC) positions. Within the Qwen family, FJC positions remain closely aligned across scale and training, while other architectures show a shifted but still coherent transition depth. (b) Violin plots of normalized brewing duration, which varies less than overall outcome quality across the same comparisons.}
 \label{fig:brewing_stability}
-\end{figure}
+\end{figure*}
 
-The task-dependent patterns described above are not confined to a single model. We observe the same brewing-to-resolution structure across Qwen2.5-Coder and Qwen2.5 (matched architecture, code-specialized vs.\ general-purpose) and across the 0.5B--14B scale range. Yet outcome distributions do not shift uniformly along all dimensions---this exposes a clear dissociation between mechanism and capability.
+The Computing outlier and the difficulty-dependent failure differentiation described above are not confined to a single model. We observe the same brewing-to-resolution structure across Qwen2.5-Coder and Qwen2.5 (matched architecture, code-specialized vs.\ general-purpose) and across the 0.5B--14B scale range. Yet outcome distributions do not shift uniformly along all dimensions---this exposes a clear dissociation between mechanism and capability.
 
-% 中文: Coder vs. Base. 在同架构下，code-specialized 训练显著改善了 outcome 分布：Coder 的整体 Resolved 从 [XX]\% 提升到 [XX]\%，Unresolved 从 [XX]\% 降到 [XX]\%，其中在 [task placeholder] 上增益最大。但 FJC 的归一化层位在两个模型之间保持高度相关（Pearson $r = [0.XX]$），平均偏移仅为总深度的 [X.X]\%。训练改变的更多是模型最终能 resolve 多少，而不是 resolution transition 倾向于在哪里发生。
+% 中文: Coder vs. Base. 在 Computing 上，Coder 把 Resolved 从 20.5% 提升到 33.5%，OT 从 64.1% 降到 45.9%。但 FJC 归一化位置高度相关（r=0.90），平均偏移仅 0.6%。训练改变的是 capability，不是 mechanism。
 
 \paragraph{Coder vs.\ Base.}
-Within a matched architecture, code-specialized training substantially improves the outcome distribution: the Coder model raises overall Resolved from [XX]\% to [XX]\% and reduces Unresolved from [XX]\% to [XX]\%, with the largest gains on [task placeholder]. Yet the normalized layer position of the FJC remains highly correlated between the two models (Pearson $r = [0.XX]$), with a mean shift of only [X.X]\% of total depth. Training changes how much the model can ultimately resolve far more than it changes where the resolution transition tends to occur.
+Within a matched architecture, code-specialized training substantially improves the outcome distribution: on Computing, the Coder model raises Resolved from 20.5\% to 33.5\% and reduces Overprocessed from 64.1\% to 45.9\%, primarily by improving the model's ability to preserve correct answers through late layers. Yet at the task level, the normalized FJC positions remain highly correlated between the two models (Pearson $r = 0.90$, $p = 0.014$, $n{=}6$), with a mean shift of only 0.6\% of total depth (\cref{fig:brewing_stability}). Training changes how much the model can ultimately resolve far more than it changes where the resolution transition tends to occur.
 
-% 中文: Scaling. 更大的模型把概率质量从 Unresolved 和 Misresolved 转移到 Resolved，反映有效计算能力的提升。Overprocessed 呈现一个值得注意的非单调趋势：在中等规模达到峰值（[XX]\%）后下降——"找到答案"的能力先于"稳定保留答案"的能力出现。与此同时，归一化 brewing duration 在不同规模间保持稳定，大致维持在总深度的 [XX]\% $\pm$ [X.X]\%。capability 在变，但计算骨架没有变。
+% 中文: Scaling. 更大模型把 UR/MR 转向 Resolved。Computing 上 OT 非单调——中等规模峰值后下降。归一化 brewing duration 跨规模稳定（~40%）。
 
 \paragraph{Scaling.}
-Larger models shift probability mass from Unresolved and Misresolved into Resolved, reflecting increased effective computational capacity. Overprocessed exhibits a noteworthy non-monotonic trend: it peaks at intermediate scales ([XX]\%) before declining---the ability to reach the correct answer emerges before the ability to stably preserve it. Meanwhile, normalized brewing duration remains stable across scales, holding at roughly [XX]\% $\pm$ [X.X]\% of total depth. Capability changes, but the computational scaffold does not.
+Larger models shift probability mass from Unresolved and Misresolved into Resolved, reflecting increased effective computational capacity. In particular, the Unresolved rate drops most sharply with scale, suggesting that additional depth provides the computational headroom needed for convergence even on difficult instances. On Computing, Overprocessed exhibits a noteworthy non-monotonic trend, peaking at intermediate scales before declining---the ability to reach the correct answer emerges before the ability to stably preserve it. Meanwhile, normalized brewing duration remains stable across scales (\cref{fig:brewing_stability}). Capability changes, but the computational scaffold does not.
 
 % 中文: 跨架构。同样的 pattern 延伸到 Qwen 系列之外。在 CodeLlama / Llama 和 DeepSeek-Coder 上，outcome 分布随训练和规模移动，但 brewing 的存在和 task-dependent fingerprint 的结构保持稳健（\cref{app:subsec:cross_architecture_robustness}）。brewing 反映的是 transformer 在代码上计算的一般属性，具体的 outcome mix 则更多反映学习到的能力与有效容量。
 

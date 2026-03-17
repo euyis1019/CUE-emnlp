@@ -4,7 +4,7 @@
 % 中文: Models. 我们分析了 Qwen2.5-Coder，DeepSeek-Coder，Qwen2.5，CodeLlama 与 Llama，详细模型 URL 见附录。正文中我们重点研究 Qwen2.5-Coder-7B。
 
 \paragraph{Models.}
-We analyze Qwen2.5-Coder \citep{hui2024qwen25coder}, DeepSeek-Coder \citep{guo2024deepseekcoder}, Qwen2.5 \citep{yang2024qwen25}, CodeLlama \citep{roziere2023codellama}, and Llama \citep{llama3team2024}; full model URLs are listed in \cref{app:model_urls_and_setup}. Throughout the main text we focus on Qwen2.5-Coder-7B.
+We analyze Qwen2.5-Coder \citep{hui2024qwen25coder}, DeepSeek-Coder \citep{guo2024deepseekcoder}, Qwen2.5 \citep{yang2024qwen25}, CodeLlama \citep{roziere2023codellama}, and Llama \citep{llama3team2024}; full model URLs are listed in \cref{app:model_urls_and_setup}. Throughout the main text we focus on Qwen2.5-Coder-7B; unless otherwise noted, all statistics are computed on the 20\% held-out test set across all six task families (the \emph{anchor setting}).
 
 % 中文: Benchmark. 为了研究内部代码推理，我们需要一组足够简单、能够隔离具体推理原语，但又足够丰富、能产生不同计算行为的任务。因此我们沿着 program analysis 中一个经典轴来设计六类任务：data flow 与 control flow。每个实例由短代码片段 C 和问题后缀 Q 组成，形成 source prompt S = [C; Q]。答案始终是单个数字 t* ∈ D = {0,1,...,9}，从而保证目标只对应一个 token，避免 multi-token decoding 带来的分析混淆。六类任务分别是：(1) Copying, (2) Computing, (3) Conditional, (4) Loop, (5) Loop-unrolled, (6) Short-circuit。代码片段保持短小，使逐层信号反映 reasoning primitive 而非长上下文效应；答案限定为单 digit token（0–9），为后续 diagnostic function 提供对齐的输出空间以支持跨层比较。完整细节与 cases 见附录。
 

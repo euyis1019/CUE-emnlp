@@ -1,26 +1,18 @@
-% Appendix A: Benchmark Design Details
-
 \section{Benchmark Design Details}
 \label{app:benchmark_design_details}
 
-Our benchmark comprises \textbf{six code reasoning tasks} organized into two categories:
-\textbf{Data Flow} tasks (Pure Copying, Computing, Loop Unrolled) require tracking how values propagate through sequential assignments and arithmetic---every line is always executed.
-\textbf{Control Flow} tasks (Conditional, Short-Circuit, Loop) require evaluating conditions at runtime to determine which execution path is taken.
+Our benchmark comprises six code reasoning tasks in two categories---\textbf{Data Flow} (Pure Copying, Computing, Loop Unrolled) and \textbf{Control Flow} (Conditional, Short-Circuit, Loop)---sharing four design constraints:
+(1)~every answer is a single digit $t^* \in \{0,\dots,9\}$;
+(2)~all prompts end with \texttt{\# The value of <var> is "};
+(3)~variable names are randomized per sample;
+(4)~each task has explicit difficulty parameters.
+The benchmark contains 12,400 samples in total.
 
-All tasks share four design constraints:
-(1)~Every answer is a single digit $t^* \in \{0,\dots,9\}$, mapping to exactly one token across all tokenizers we study.
-(2)~All prompts end with the standardized suffix \texttt{\# The value of <var> is "}, and the model is expected to produce the answer as the immediate next token.
-(3)~Variable names are randomly drawn from lowercase letters \texttt{a}--\texttt{z} per sample to prevent positional shortcuts.
-(4)~Each task has explicit control parameters that monotonically increase difficulty while preserving the task's reasoning identity.
-
-The total benchmark contains 12,400 samples across all tasks.
-
-% ------------------------------------------------------------------
 \subsection{Data Flow Tasks}
 \label{app:subsec:data_flow}
 
 \paragraph{(1) Pure Copying.}
-The model traces a chain of variable-to-variable assignments with no computation. Difficulty is controlled by chain length (\texttt{steps} $\in\{1,\dots,5\}$) and the number of distractor comment lines (\texttt{padding} $\in\{0,\dots,3\}$) inserted between assignments.
+Variable-to-variable assignment chains with no computation. Difficulty: chain length (\texttt{steps} $\in\{1,\dots,5\}$) and distractor lines (\texttt{padding} $\in\{0,\dots,3\}$).
 
 \begin{lstlisting}[language=Python]
 z = 3
@@ -30,10 +22,10 @@ j = z
 h = j
 # The value of h is "
 \end{lstlisting}
-\noindent Answer: \texttt{3}. The answer always equals the initial literal value.
+\noindent Answer: \texttt{3}.
 
 \paragraph{(2) Computing.}
-The model simultaneously tracks variable assignments and performs arithmetic along the chain. Difficulty is controlled by chain length (\texttt{steps} $\in\{2,\dots,5\}$), compute density $\rho \in \{0, 0.5, 1.0\}$ (fraction of steps involving arithmetic; $\rho{=}0$ reduces to Copying), and distractor arithmetic lines (\texttt{padding} $\in\{0,1,2\}$) that are syntactically similar to real chain steps but use independent variables.
+Assignment chains interleaved with arithmetic. Difficulty: chain length (\texttt{steps} $\in\{2,\dots,5\}$), compute density $\rho \in \{0, 0.5, 1.0\}$ (fraction of arithmetic steps; $\rho{=}0$ reduces to Copying), and distractor arithmetic lines (\texttt{padding} $\in\{0,1,2\}$).
 
 \begin{lstlisting}[language=Python]
 a = 1
@@ -43,12 +35,11 @@ h = s + 2
 u = h + 2
 # The value of u is "
 \end{lstlisting}
-\noindent Answer: \texttt{8} ($1+2+1+2+2$). Each compute step adds $+1$ or $+2$; samples exceeding the single-digit range are discarded and regenerated.
+\noindent Answer: \texttt{8} ($1+2+1+2+2$). Samples exceeding single-digit range are discarded.
 
 \paragraph{(3) Loop Unrolled.}
-The model traces repeated in-place accumulation written as sequential statements (no loop syntax). This serves as a \emph{control condition} for the Loop task---it presents the identical computation without requiring loop comprehension. Each sample is paired with a corresponding Loop sample sharing the same initial value, operation, and answer.
-
-Difficulty is controlled by iteration count (\texttt{iteration} $\in\{1,\dots,4\}$) and increment size (\texttt{operation} $\in\{+1, +2\}$).
+Repeated in-place accumulation written as sequential statements (no loop syntax), serving as a \emph{control condition} for the Loop task. Each sample is paired with a Loop counterpart sharing the same initial value, operation, and answer.
+Difficulty: iteration count (\texttt{iteration} $\in\{1,\dots,4\}$) and increment size (\texttt{operation} $\in\{+1, +2\}$).
 
 \begin{lstlisting}[language=Python]
 h = 3
@@ -58,14 +49,13 @@ h = h + 1
 h = h + 1
 # The value of h is "
 \end{lstlisting}
-\noindent Answer: \texttt{7} ($3 + 4 \times 1$). Variable names exclude \texttt{i}, \texttt{j}, \texttt{k}, \texttt{l}, \texttt{o} to avoid confusion with loop iterators and the digit \texttt{0}.
+\noindent Answer: \texttt{7} ($3 + 4 \times 1$). Variable names exclude \texttt{i}, \texttt{j}, \texttt{k}, \texttt{l}, \texttt{o} to avoid confusion with loop iterators.
 
-% ------------------------------------------------------------------
 \subsection{Control Flow Tasks}
 \label{app:subsec:control_flow}
 
 \paragraph{(4) Conditional.}
-The model evaluates comparison conditions and follows the correct path through nested if-else structures. Difficulty is controlled by nesting depth (\texttt{depth} $\in\{1,2,3\}$) and condition type ($>$, $<$, $==$, $\geq$, $\leq$). Thresholds are sampled near the initial value to ensure both branches are reachable; terminal branch values are randomized to prevent correlation with depth.
+Nested if-else evaluation. Difficulty: nesting depth (\texttt{depth} $\in\{1,2,3\}$) and condition type ($>$, $<$, $==$, $\geq$, $\leq$). Thresholds are sampled near the initial value to ensure both branches are reachable.
 
 \begin{lstlisting}[language=Python]
 g = 9
@@ -81,10 +71,10 @@ else:
     e = 6
 # The value of e is "
 \end{lstlisting}
-\noindent Answer: \texttt{3} ($9>8$ true, $9>6$ true, $9>9$ false $\Rightarrow$ innermost else branch).
+\noindent Answer: \texttt{3} ($9>8$ true, $9>6$ true, $9>9$ false $\Rightarrow$ innermost else).
 
 \paragraph{(5) Short-Circuit Evaluation.}
-The model evaluates compound boolean expressions with \texttt{and}/\texttt{or} connectors involving multiple variables. Difficulty is controlled by the number of subconditions (\texttt{num\_conditions} $\in\{1,2,3\}$) and connector type. Each subcondition uses a random comparison operator and a threshold sampled near the variable value to ensure a mix of true and false outcomes.
+Compound boolean expressions with \texttt{and}/\texttt{or} connectors. Difficulty: number of subconditions (\texttt{num\_conditions} $\in\{1,2,3\}$) and connector type.
 
 \begin{lstlisting}[language=Python]
 s = 2
@@ -99,7 +89,7 @@ else:
 \noindent Answer: \texttt{7} (all three subconditions are true).
 
 \paragraph{(6) Loop.}
-The model understands \texttt{for~...~in~range(...)} syntax and mentally executes iterative accumulation. Difficulty is controlled by iteration count (\texttt{iteration} $\in\{1,\dots,4\}$) and increment size (\texttt{operation} $\in\{+1, +2\}$). The loop iterator is always \texttt{i}.
+\texttt{for~...~in~range(...)} iterative accumulation. Difficulty: iteration count (\texttt{iteration} $\in\{1,\dots,4\}$) and increment (\texttt{operation} $\in\{+1, +2\}$). The loop iterator is always \texttt{i}.
 
 \begin{lstlisting}[language=Python]
 c = 3
@@ -107,9 +97,8 @@ for i in range(2):
     c = c + 1
 # The value of c is "
 \end{lstlisting}
-\noindent Answer: \texttt{5} ($3 + 2 \times 1$). Every Loop sample has a matched Loop Unrolled counterpart, enabling direct ablation of whether difficulty stems from loop syntax comprehension or the underlying sequential computation.
+\noindent Answer: \texttt{5} ($3 + 2 \times 1$). Every Loop sample has a matched Loop Unrolled counterpart.
 
-% ------------------------------------------------------------------
 \subsection{Task Spectrum Summary}
 \label{app:subsec:task_spectrum}
 
@@ -135,20 +124,18 @@ Loop             & \checkmark           & \checkmark\checkmark & Iteration count
 \label{tab:task_spectrum}
 \end{table}
 
-% ------------------------------------------------------------------
 \subsection{Answer Distribution Control}
 \label{app:subsec:answer_dist}
 
-To prevent spurious correlations between difficulty parameters and ground-truth answers, we apply task-specific debiasing during data generation.
-For Conditional and Short-Circuit tasks, branch assignment values are randomized independently of nesting depth and condition count.
-For Loop and Loop Unrolled, initial values are sampled via reverse computation (sample the answer first, then derive the initial value), minimizing the correlation between iteration count and answer magnitude.
-For Computing, initial values span the full 0--9 range to maximize answer diversity.
-
-\cref{fig:answer_dist} visualizes the resulting answer distributions across all six tasks. Each subplot shows the proportion of each answer digit (0--9) at every difficulty level. The Pearson correlation $r$ between the difficulty parameter and the answer value is reported per task; all debiased tasks (marked ``fixed'') achieve $|r| < 0.15$, confirming that our benchmark does not introduce systematic prior biases in the answer space.
+We apply task-specific debiasing to prevent correlations between difficulty parameters and answers:
+Conditional/Short-Circuit branch values are randomized independently of depth;
+Loop/Loop Unrolled initial values are derived via reverse computation (sample the answer first);
+Computing initial values span the full 0--9 range.
+\cref{fig:answer_dist} confirms that all debiased tasks achieve $|r| < 0.15$ between difficulty and answer value.
 
 \begin{figure}[h]
 \centering
 \includegraphics[width=\columnwidth]{figures/appendix/B_answer_distribution.png}
-\caption{Answer distributions across control variables for all six tasks. Low Pearson correlations ($|r| < 0.15$ for debiased tasks) confirm that difficulty parameters do not systematically bias the answer distribution.}
+\caption{Answer distributions across control variables for all six tasks. Low Pearson correlations ($|r| < 0.15$ for debiased tasks) suggest that, after debiasing, difficulty parameters are not strongly associated with answer values.}
 \label{fig:answer_dist}
 \end{figure}

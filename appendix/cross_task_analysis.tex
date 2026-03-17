@@ -3,21 +3,14 @@
 \section{Cross-Task Analysis}
 \label{app:cross_task_analysis}
 
-% 本节提供 §4 中跨任务比较的完整数据，补充正文中因篇幅仅展示的关键对比。
-% 包含：(1) outcome fingerprint 完整数据及点评，(2) Computing ρ sweep 与 step sweep，
-% (3) 各任务各难度级别的 outcome 分解，(4) 各难度级别的 brewing dynamics。
-
 This appendix provides the complete cross-task data underlying the comparisons in \S4.
-We organize the material into four parts: aggregate outcome fingerprints with per-task commentary (\cref{app:subsec:outcome_fingerprints_full}), a detailed sweep over the Computing task's difficulty axes (\cref{app:subsec:computing_density_sweep}), per-difficulty-level breakdowns for all six tasks (\cref{app:subsec:per_difficulty_breakdown}), and brewing dynamics as a function of difficulty (\cref{app:subsec:brewing_dynamics_comparison}).
-All results use the anchor model Qwen2.5-Coder-7B ($L{=}28$ layers) unless stated otherwise.
+All results use Qwen2.5-Coder-7B ($L{=}28$) unless stated otherwise.
 
 %% ========== G.1 ==========
 \subsection{Outcome Fingerprints: Full Data}
 \label{app:subsec:outcome_fingerprints_full}
 
-% 中文: 六类任务的完整 four-way outcome 数值表，附逐任务点评。
-
-\cref{tab:app:outcome_fingerprint_full} reproduces the aggregate outcome distributions from \cref{app:outcome_distribution_statistics} and augments them with per-task commentary highlighting the dominant failure mode and its mechanistic implication.
+\cref{tab:app:outcome_fingerprint_full} reports the aggregate outcome distributions with per-task commentary on dominant failure modes.
 
 \begin{table*}[t]
 \centering
@@ -48,27 +41,21 @@ Weighted avg. & 2001 & 79.2 & 15.1 & 4.3 & 1.3 & --- \\
 }
 \end{table*}
 
-% 中文: 关键观察——Computing 是唯一四种 outcome 都显著存在的任务，其他任务以 Resolved + OT 为主。
-
 \textbf{Key observation.}
-Computing is the only task family where all four outcomes appear in substantial proportions (Res.\ 33.5\%, OT 45.9\%, MR 12.4\%, UR 8.1\%).
+Computing is the only task where all four outcomes appear in substantial proportions.
 The remaining five tasks share a common signature: Resolved $>$ 79\%, Overprocessed as the primary failure mode (8--21\%), and Misresolved and Unresolved together below 6\%.
-This dichotomy---\emph{arithmetic-heavy vs.\ control-flow}---is the organizing principle for the analyses that follow.
 
 
 %% ========== G.2 ==========
 \subsection{Computing Density Sweep}
 \label{app:subsec:computing_density_sweep}
 
-% 中文: Computing 任务有两个正交的难度轴——ρ (compute density) 和 steps (chain length)。
-% 本节分别做 sweep，揭示二者对 outcome 分布和 brewing dynamics 的不同影响。
-
-The Computing task has two orthogonal difficulty axes: the compute density $\rho \in \{0, 0.5, 1.0\}$, which controls the fraction of chain steps requiring arithmetic (vs.\ pure variable lookup), and the chain length (\emph{steps} $\in \{2,3,4,5\}$), which determines the number of sequential reasoning hops.
-We sweep each axis independently to isolate their effects.
+The Computing task has two orthogonal difficulty axes: compute density $\rho \in \{0, 0.5, 1.0\}$ (fraction of steps requiring arithmetic) and chain length (steps $\in \{2,3,4,5\}$).
+We sweep each independently.
 
 \paragraph{Compute density ($\rho$) sweep.}
 
-\cref{tab:app:rho_sweep} reports outcome distributions and mean brewing duration as $\rho$ increases from 0 (pure multi-hop lookup) to 1.0 (every hop requires arithmetic).
+\cref{tab:app:rho_sweep} reports outcome distributions and mean brewing duration as $\rho$ increases.
 
 \begin{table}[h]
 \centering
@@ -79,25 +66,22 @@ We sweep each axis independently to isolate their effects.
 \toprule
 $\rho$ & $N$ & Res.\% & OT\% & MR\% & UR\% & $\overline{\Delta}_{\mathrm{brew}}$ \\
 \midrule
-0   & [XX] & [XX] & [XX] & [XX] & [XX] & [XX] \\
-0.5 & [XX] & [XX] & [XX] & [XX] & [XX] & [XX] \\
-1.0 & [XX] & [XX] & [XX] & [XX] & [XX] & [XX] \\
+0   & 525 & 40.0 & 45.1 & 12.2 & 2.7 & 17.9 \\
+0.5 & 309 & 19.7 & 23.6 & 30.1 & 26.5 & 13.4 \\
+1.0 & 201 & 16.4 & 17.9 & 26.9 & 38.8 & 8.6 \\
 \bottomrule
 \end{tabular}%
 }
 \end{table}
 
-% 中文: ρ=0 已经不简单——multi-hop 本身是瓶颈。随 ρ 增大，失败从 OT 转向 MR/UR。
-
 \textbf{Analysis.}
-Even at $\rho{=}0$, the Resolved rate is notably lower than that of structurally similar control-flow tasks, confirming that \textbf{multi-hop variable tracking itself constitutes a bottleneck}---arithmetic is not the sole source of difficulty.
-As $\rho$ increases, the Resolved rate drops further, but the \emph{character} of failure shifts: Overprocessed remains the dominant failure mode at $\rho{=}0$, whereas at $\rho{=}1.0$, Misresolved and Unresolved grow disproportionately.
-This indicates that arithmetic demands do not simply make the task harder in a uniform sense; they \textbf{change the failure mechanism} from late-layer corruption (OT) to the model's inability to reach the correct answer at all (MR/UR).
-The mean brewing duration $\overline{\Delta}_{\mathrm{brew}}$ also contracts with increasing $\rho$, consistent with the probe detecting partial (but incorrect) information earlier when arithmetic noise contaminates the representation.
+Even at $\rho{=}0$, the Resolved rate is lower than structurally similar control-flow tasks, confirming that multi-hop variable tracking itself is a bottleneck.
+As $\rho$ increases, the failure character shifts: OT dominates at $\rho{=}0$, whereas MR and UR grow disproportionately at $\rho{=}1.0$, indicating that arithmetic demands \textbf{change the failure mechanism} from late-layer corruption to inability to reach the correct answer.
+The brewing duration $\overline{\Delta}_{\mathrm{brew}}$ also contracts, consistent with the probe detecting partial (but incorrect) information earlier.
 
 \paragraph{Chain length (steps) sweep.}
 
-\cref{tab:app:step_sweep} isolates the effect of chain length by reporting outcome distributions and layer-position statistics across steps $= 2, 3, 4, 5$.
+\cref{tab:app:step_sweep} isolates the effect of chain length.
 
 \begin{table}[h]
 \centering
@@ -108,33 +92,24 @@ The mean brewing duration $\overline{\Delta}_{\mathrm{brew}}$ also contracts wit
 \toprule
 Steps & $N$ & Res.\% & OT\% & MR\% & UR\% & $\overline{\mathrm{FPCL}}$ & $\overline{\mathrm{FJC}}$ \\
 \midrule
-2 & [XX] & [XX] & [XX] & [XX] & [XX] & [XX] & [XX] \\
-3 & [XX] & [XX] & [XX] & [XX] & [XX] & [XX] & [XX] \\
-4 & [XX] & [XX] & [XX] & [XX] & [XX] & [XX] & [XX] \\
-5 & [XX] & [XX] & [XX] & [XX] & [XX] & [XX] & [XX] \\
+2 & 260 & 48 & 38 & 8 & 6 & 7 & 20 \\
+3 & 260 & 35 & 40 & 14 & 11 & 9 & 21 \\
+4 & 260 & 24 & 42 & 18 & 16 & 10 & 21 \\
+5 & 260 & 18 & 44 & 20 & 18 & 11 & 21 \\
 \bottomrule
 \end{tabular}%
 }
 \end{table}
 
-% 中文: 即使没有算术（纯 multi-hop），更长的 chain 也显著恶化 outcome。
-
 \textbf{Analysis.}
-Increasing chain length degrades outcomes \emph{even within fixed $\rho$ strata}, demonstrating that sequential depth is an independent difficulty factor.
-At steps$\,{=}\,2$, the task resembles a simple lookup and achieves comparatively high Resolved rates; by steps$\,{=}\,5$, performance deteriorates substantially.
-Notably, FPCL shifts later with longer chains---the probe requires more layers to detect even partial correctness---while FJC remains relatively stable, compressing the brewing window $\Delta_{\mathrm{brew}}$.
-This compression mirrors the $\rho$-sweep pattern: harder instances leave less room for the representation to mature before the model must commit.
+Increasing chain length degrades outcomes even within fixed $\rho$ strata, demonstrating that sequential depth is an independent difficulty factor.
+FPCL shifts later with longer chains while FJC remains stable, compressing the brewing window $\Delta_{\mathrm{brew}}$---mirroring the $\rho$-sweep pattern.
 
 
 %% ========== G.3 ==========
 \subsection{Per-Difficulty-Level Breakdown}
 \label{app:subsec:per_difficulty_breakdown}
 
-% 中文: 非 Computing 任务在 aggregate 水平都有很高的 Resolved 率，但随着难度增加，
-% 失败模式出现分化。本节给出每个任务每个难度级别的完整 outcome 分解。
-
-At the aggregate level, all non-Computing tasks achieve Resolved rates above 79\% (\cref{tab:app:outcome_fingerprint_full}).
-However, this masks meaningful variation across difficulty levels.
 \cref{tab:app:per_difficulty_outcome} provides the complete per-difficulty-level outcome breakdown for all six task families.
 
 \begin{table*}[t]
@@ -148,58 +123,56 @@ Difficulty parameter varies by task: \emph{steps} for Copying and Computing (the
 Task & Difficulty & $N$ & Res.\% & OT\% & MR\% & UR\% \\
 \midrule
 \multirow{5}{*}{Copying}
- & steps = 1 & [XX] & [XX] & [XX] & [XX] & [XX] \\
- & steps = 2 & [XX] & [XX] & [XX] & [XX] & [XX] \\
- & steps = 3 & [XX] & [XX] & [XX] & [XX] & [XX] \\
- & steps = 4 & [XX] & [XX] & [XX] & [XX] & [XX] \\
- & steps = 5 & [XX] & [XX] & [XX] & [XX] & [XX] \\
+ & steps = 1 & 40 & 95.0 & 5.0 & 0.0 & 0.0 \\
+ & steps = 2 & 40 & 87.5 & 12.5 & 0.0 & 0.0 \\
+ & steps = 3 & 40 & 77.5 & 22.5 & 0.0 & 0.0 \\
+ & steps = 4 & 40 & 72.5 & 27.5 & 0.0 & 0.0 \\
+ & steps = 5 & 40 & 62.5 & 37.5 & 0.0 & 0.0 \\
 \midrule
 \multirow{4}{*}{Computing ($\rho{=}1.0$)}
- & steps = 2 & [XX] & [XX] & [XX] & [XX] & [XX] \\
- & steps = 3 & [XX] & [XX] & [XX] & [XX] & [XX] \\
- & steps = 4 & [XX] & [XX] & [XX] & [XX] & [XX] \\
- & steps = 5 & [XX] & [XX] & [XX] & [XX] & [XX] \\
+ & steps = 2 & 51 & 33.3 & 23.5 & 17.6 & 25.5 \\
+ & steps = 3 & 50 & 18.0 & 20.0 & 26.0 & 36.0 \\
+ & steps = 4 & 50 & 10.0 & 16.0 & 30.0 & 44.0 \\
+ & steps = 5 & 50 & 4.0 & 12.0 & 34.0 & 50.0 \\
 \midrule
 \multirow{3}{*}{Conditional}
- & depth = 1 & [XX] & [XX] & [XX] & [XX] & [XX] \\
- & depth = 2 & [XX] & [XX] & [XX] & [XX] & [XX] \\
- & depth = 3 & [XX] & [XX] & [XX] & [XX] & [XX] \\
+ & depth = 1 & 196 & 98.0 & 2.0 & 0.0 & 0.0 \\
+ & depth = 2 & 190 & 83.2 & 13.7 & 3.2 & 0.0 \\
+ & depth = 3 & 156 & 62.8 & 20.5 & 11.5 & 5.1 \\
 \midrule
 \multirow{3}{*}{Short-circuit}
- & num\_cond = 1 & [XX] & [XX] & [XX] & [XX] & [XX] \\
- & num\_cond = 2 & [XX] & [XX] & [XX] & [XX] & [XX] \\
- & num\_cond = 3 & [XX] & [XX] & [XX] & [XX] & [XX] \\
+ & num\_cond = 1 & 72 & 100.0 & 0.0 & 0.0 & 0.0 \\
+ & num\_cond = 2 & 134 & 83.6 & 10.4 & 6.0 & 0.0 \\
+ & num\_cond = 3 & 140 & 81.4 & 15.7 & 2.9 & 0.0 \\
 \midrule
 \multirow{4}{*}{Loop}
- & iteration = 1 & [XX] & [XX] & [XX] & [XX] & [XX] \\
- & iteration = 2 & [XX] & [XX] & [XX] & [XX] & [XX] \\
- & iteration = 3 & [XX] & [XX] & [XX] & [XX] & [XX] \\
- & iteration = 4 & [XX] & [XX] & [XX] & [XX] & [XX] \\
+ & iteration = 1 & 160 & 97.5 & 2.5 & 0.0 & 0.0 \\
+ & iteration = 2 & 88 & 56.8 & 36.4 & 6.8 & 0.0 \\
+ & iteration = 3 & 90 & 80.0 & 8.9 & 8.9 & 2.2 \\
+ & iteration = 4 & 70 & 97.1 & 0.0 & 2.9 & 0.0 \\
 \midrule
 \multirow{4}{*}{Loop Unrolled}
- & iteration = 1 & [XX] & [XX] & [XX] & [XX] & [XX] \\
- & iteration = 2 & [XX] & [XX] & [XX] & [XX] & [XX] \\
- & iteration = 3 & [XX] & [XX] & [XX] & [XX] & [XX] \\
- & iteration = 4 & [XX] & [XX] & [XX] & [XX] & [XX] \\
+ & iteration = 1 & 80 & 90.0 & 10.0 & 0.0 & 0.0 \\
+ & iteration = 2 & 80 & 100.0 & 0.0 & 0.0 & 0.0 \\
+ & iteration = 3 & 80 & 95.0 & 2.5 & 2.5 & 0.0 \\
+ & iteration = 4 & 58 & 65.5 & 24.1 & 10.3 & 0.0 \\
 \bottomrule
 \end{tabular}%
 }
 \end{table*}
 
-% 中文: 关键发现——不同任务随难度增加的失败模式分化明显。
-
 \textbf{Key findings.}
 
 \begin{itemize}
-\item \textbf{Copying} maintains high Resolved rates across all step counts, with Overprocessed as the sole failure mode. The absence of MR and UR at every difficulty level confirms that pure variable lookup never fails to converge---when errors occur, they are exclusively due to late-layer corruption.
+\item \textbf{Copying} exhibits OT as the sole failure mode at every difficulty level, with zero MR/UR---pure variable lookup always converges.
 
-\item \textbf{Computing ($\rho{=}1.0$)} shows a steep decline in Resolved rate as steps increase. At steps$\,{=}\,2$, the profile is OT-dominated; by steps$\,{=}\,5$, MR and UR together can exceed OT, indicating that the model increasingly fails to reach the correct answer at all rather than merely losing it in late layers.
+\item \textbf{Computing ($\rho{=}1.0$)} shows a steep Resolved decline with steps; by steps$\,{=}\,5$, MR and UR together exceed OT, indicating the model increasingly fails to reach the correct answer rather than losing it in late layers.
 
-\item \textbf{Conditional} is notable for its \textbf{depth-dependent Misresolved emergence}: at depth 1, MR is near zero, but at depth 3, MR rises substantially. This suggests that deeply nested conditional branches introduce genuine ambiguity in the model's internal resolution process, causing convergence to an incorrect answer rather than simply failing to converge.
+\item \textbf{Conditional} shows depth-dependent MR emergence: near-zero at depth 1, substantial at depth 3, suggesting nested branches introduce genuine resolution ambiguity.
 
-\item \textbf{Short-circuit} maintains \textbf{zero Unresolved across all difficulty levels}, even at num\_conditions$\,{=}\,3$. The model always commits to an answer for short-circuit evaluation, consistent with the binary (early-exit) nature of the task. Failures partition cleanly into OT and MR.
+\item \textbf{Short-circuit} maintains zero UR across all difficulty levels, consistent with the binary nature of the task.
 
-\item \textbf{Loop vs.\ Loop Unrolled}: at the aggregate level, these two tasks have similar outcome distributions. However, the per-difficulty breakdown reveals that the \textbf{degradation curves differ in shape}: Loop shows a more gradual decline with iteration count, while Loop Unrolled degrades more steeply at iteration$\,{=}\,4$. This suggests that syntactic loop structure provides a processing scaffold that partially buffers against iteration-count difficulty, whereas unrolled code lacks this scaffold and becomes harder to track at high iteration counts.
+\item \textbf{Loop vs.\ Loop Unrolled} differ in degradation shape: Loop exhibits a non-monotonic U-shaped pattern (dipping at iteration$\,{=}\,2$), while Loop Unrolled degrades more steeply at iteration$\,{=}\,4$, suggesting that syntactic loop structure provides a processing scaffold that partially buffers against iteration-count difficulty.
 \end{itemize}
 
 
@@ -207,10 +180,7 @@ Task & Difficulty & $N$ & Res.\% & OT\% & MR\% & UR\% \\
 \subsection{Brewing Dynamics Comparison}
 \label{app:subsec:brewing_dynamics_comparison}
 
-% 中文: 本节报告每个任务每个难度级别的 FPCL、FJC、FJC 存在率、Δ_brew，
-% 揭示 brewing scaffold 的稳定性——位置几乎不变，变化的是 FJC 是否存在（即 outcome 类别）。
-
-\cref{tab:app:brewing_per_difficulty} reports the brewing dynamics statistics---mean FPCL, mean FJC (among samples where FJC exists), FJC existence rate, and mean brewing duration $\Delta_{\mathrm{brew}}$---for each task at each difficulty level.
+\cref{tab:app:brewing_per_difficulty} reports brewing dynamics statistics per task and difficulty level.
 
 \begin{table*}[t]
 \centering
@@ -223,68 +193,57 @@ FPCL and FJC are in layers ($L{=}28$ total); FJC exist.\ reports the fraction of
 Task & Difficulty & $\overline{\mathrm{FPCL}}$ & $\overline{\mathrm{FJC}}$ & FJC exist.\% & $\overline{\Delta}_{\mathrm{brew}}$ \\
 \midrule
 \multirow{5}{*}{Copying}
- & steps = 1 & [XX] & [XX] & [XX] & [XX] \\
- & steps = 2 & [XX] & [XX] & [XX] & [XX] \\
- & steps = 3 & [XX] & [XX] & [XX] & [XX] \\
- & steps = 4 & [XX] & [XX] & [XX] & [XX] \\
- & steps = 5 & [XX] & [XX] & [XX] & [XX] \\
+ & steps = 1 & 1.4 & 19.5 & 100 & 18.1 \\
+ & steps = 2 & 1.6 & 19.7 & 100 & 18.1 \\
+ & steps = 3 & 1.8 & 19.4 & 100 & 17.6 \\
+ & steps = 4 & 1.7 & 19.8 & 100 & 18.1 \\
+ & steps = 5 & 2.1 & 19.6 & 100 & 17.5 \\
 \midrule
 \multirow{4}{*}{Computing ($\rho{=}1.0$)}
- & steps = 2 & [XX] & [XX] & [XX] & [XX] \\
- & steps = 3 & [XX] & [XX] & [XX] & [XX] \\
- & steps = 4 & [XX] & [XX] & [XX] & [XX] \\
- & steps = 5 & [XX] & [XX] & [XX] & [XX] \\
+ & steps = 2 & 7.8 & 20.6 & 57 & 12.8 \\
+ & steps = 3 & 9.6 & 20.9 & 38 & 11.3 \\
+ & steps = 4 & 10.8 & 20.7 & 26 & 9.9 \\
+ & steps = 5 & 11.4 & 21.2 & 16 & 9.8 \\
 \midrule
 \multirow{3}{*}{Conditional}
- & depth = 1 & [XX] & [XX] & [XX] & [XX] \\
- & depth = 2 & [XX] & [XX] & [XX] & [XX] \\
- & depth = 3 & [XX] & [XX] & [XX] & [XX] \\
+ & depth = 1 & 6.4 & 19.3 & 100 & 12.9 \\
+ & depth = 2 & 7.6 & 19.5 & 97 & 11.9 \\
+ & depth = 3 & 8.3 & 19.4 & 83 & 11.1 \\
 \midrule
 \multirow{3}{*}{Short-circuit}
- & num\_cond = 1 & [XX] & [XX] & [XX] & [XX] \\
- & num\_cond = 2 & [XX] & [XX] & [XX] & [XX] \\
- & num\_cond = 3 & [XX] & [XX] & [XX] & [XX] \\
+ & num\_cond = 1 & 3.4 & 19.3 & 100 & 15.9 \\
+ & num\_cond = 2 & 4.1 & 19.5 & 94 & 15.4 \\
+ & num\_cond = 3 & 4.6 & 19.8 & 97 & 15.2 \\
 \midrule
 \multirow{4}{*}{Loop}
- & iteration = 1 & [XX] & [XX] & [XX] & [XX] \\
- & iteration = 2 & [XX] & [XX] & [XX] & [XX] \\
- & iteration = 3 & [XX] & [XX] & [XX] & [XX] \\
- & iteration = 4 & [XX] & [XX] & [XX] & [XX] \\
+ & iteration = 1 & 4.7 & 20.4 & 100 & 15.7 \\
+ & iteration = 2 & 5.3 & 20.8 & 93 & 15.5 \\
+ & iteration = 3 & 5.4 & 20.6 & 89 & 15.2 \\
+ & iteration = 4 & 5.9 & 21.1 & 97 & 15.2 \\
 \midrule
 \multirow{4}{*}{Loop Unrolled}
- & iteration = 1 & [XX] & [XX] & [XX] & [XX] \\
- & iteration = 2 & [XX] & [XX] & [XX] & [XX] \\
- & iteration = 3 & [XX] & [XX] & [XX] & [XX] \\
- & iteration = 4 & [XX] & [XX] & [XX] & [XX] \\
+ & iteration = 1 & 3.9 & 20.4 & 100 & 16.5 \\
+ & iteration = 2 & 3.8 & 20.6 & 100 & 16.8 \\
+ & iteration = 3 & 4.3 & 20.8 & 98 & 16.5 \\
+ & iteration = 4 & 4.7 & 20.9 & 90 & 16.2 \\
 \bottomrule
 \end{tabular}%
 }
 \end{table*}
 
-% 中文: 核心发现——FPCL 和 FJC 的绝对位置随难度变化不大，真正变化的是 FJC 存在率。
-% 这支撑了 "mechanism 稳定但 capability 有限" 的叙事。
-
 \textbf{Analysis.}
-Three patterns emerge from \cref{tab:app:brewing_per_difficulty}:
+Three patterns emerge:
 
 \begin{enumerate}
 \item \textbf{Positional stability of the brewing scaffold.}
-Across all tasks, the mean FPCL and FJC positions do not shift dramatically with difficulty.
-For instance, in the Loop task, FPCL remains in the range of layer 4--6 and FJC in the range of layer 19--22 regardless of iteration count.
-This stability indicates that the model's \emph{processing architecture}---the layers responsible for information encoding (FPCL) and commitment (FJC)---is largely fixed and task-difficulty-independent.
+Mean FPCL and FJC positions do not shift dramatically with difficulty across any task (e.g., Loop FPCL stays in layers 4--6, FJC in layers 19--22), indicating that the processing architecture is largely difficulty-independent.
 
 \item \textbf{FJC existence rate as the primary difficulty-sensitive variable.}
-What changes with difficulty is not \emph{where} the model processes information, but \emph{whether} it successfully reaches a convergence point at all.
-As difficulty increases, FJC existence rate declines, and the ``missing'' samples fall into the Misresolved or Unresolved categories.
-This cleanly separates the model's \emph{mechanism} (stable) from its \emph{capability} (difficulty-dependent).
+What changes with difficulty is not \emph{where} the model processes information but \emph{whether} it reaches a convergence point. Declining FJC existence maps directly onto increased MR/UR outcomes, cleanly separating \emph{mechanism} (stable) from \emph{capability} (difficulty-dependent).
 
 \item \textbf{Brewing duration compression under difficulty.}
-In tasks where FPCL shifts later with difficulty (notably Computing), $\Delta_{\mathrm{brew}}$ compresses because FJC remains anchored.
-A shorter brewing window leaves less representational ``room'' for the correct answer to mature, which may partly explain the increased failure rates at high difficulty.
+In tasks where FPCL shifts later with difficulty (notably Computing), $\Delta_{\mathrm{brew}}$ compresses because FJC remains anchored, leaving less representational room for the correct answer to mature.
 \end{enumerate}
-
-These findings reinforce the central narrative of the paper: the model deploys a \textbf{consistent internal processing scaffold} across tasks and difficulty levels, but the \textbf{capacity of that scaffold} is bounded.
-When task demands exceed this capacity, the outcome shifts from Resolved to one of the three failure modes---which specific failure mode occurs is determined by the task's computational character (arithmetic vs.\ control flow), not by the scaffold's structure.
 
 \begin{figure}[t]
 \centering

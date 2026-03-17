@@ -1,65 +1,44 @@
-% Appendix C.2: CSD Implementation Details
-
 \subsection{CSD Implementation Details}
 \label{app:subsec:csd_implementation}
 
-% 详细描述 Context-Stripped Decoding 的实现：baseline subtraction 操作流程、target prompt 构造方式、
-% 以及面向不熟悉 Patchscopes 的读者的背景补充。
-% 预期效果：读者无需阅读 Patchscopes 原文即可理解 CSD 的完整操作。
-
-This section provides a self-contained description of the Context-Stripped Decoding (CSD) procedure, so that readers unfamiliar with Patchscopes \citep{ghandeharioun2024patchscopes} can reproduce the method without consulting the original paper.
-The formal definition is given in \cref{eq:csd}; here we unpack each step.
+This section provides a self-contained description of Context-Stripped Decoding (CSD). The formal definition is given in \cref{eq:csd}; here we unpack each step.
 
 \paragraph{Step 1: Target prompt construction.}
-Each code-understanding sample consists of a code context $C$ (the program) and a question suffix $Q$ (e.g., \texttt{\# The value of x is "}).
-The \emph{source prompt} is the full concatenation $S = [C;\, Q]$.
-The \emph{target prompt} retains only the question suffix: $T = Q$, thereby stripping away all code context.
-Because $T$ contains no information about the program, any correct answer decoded from $T$ must originate from the patched hidden state rather than from the surrounding context.
+The \emph{source prompt} is $S = [C;\, Q]$ (code context + question suffix).
+The \emph{target prompt} retains only the question suffix: $T = Q$, stripping away all code context so that any correct answer decoded from $T$ must originate from the patched hidden state.
 
 \paragraph{Step 2: Patching procedure.}
 For a given layer $\ell \in \{0, \dots, L{-}1\}$, CSD proceeds as follows:
 \begin{enumerate}
-    \item Run the source prompt $S = [C;\, Q]$ through the full model. Extract the hidden state $\mathbf{h}^\ell_S$ at the last token position at layer $\ell$.
-    \item Construct a separate forward pass with the target prompt $T = Q$. At layer $\ell$, replace the last-token hidden state in the target run with $\mathbf{h}^\ell_S$ from the source run:
+    \item Run the source prompt $S$ through the full model. Extract the hidden state $\mathbf{h}^\ell_S$ at the last token position at layer $\ell$.
+    \item Construct a separate forward pass with $T$. At layer $\ell$, replace the last-token hidden state in the target run:
     \begin{equation}
     \label{eq:csd_patch}
     \tilde{\mathbf{h}}^\ell_T \;\leftarrow\; \mathbf{h}^\ell_S.
     \end{equation}
-    \item Continue the target forward pass from layer $\ell{+}1$ through layer $L{-}1$, applying the remaining transformer blocks $F_{\ell+1}, \dots, F_{L-1}$, followed by LayerNorm and the unembedding matrix $W_u$. Crucially, the attention context for all subsequent layers is restricted to $T$, not the original $S$.
+    \item Continue the target forward pass from layer $\ell{+}1$ through $L{-}1$, applying the remaining transformer blocks, LayerNorm, and the unembedding matrix $W_u$. The attention context for all subsequent layers is restricted to $T$.
 \end{enumerate}
 This yields patched logits $\mathbf{z}_{\mathrm{patch}}^\ell = W_u \circ \mathrm{LN} \circ F_{L-1} \circ \cdots \circ F_{\ell+1}(\tilde{\mathbf{h}}^\ell_T)$.
 
 \paragraph{Step 3: Baseline subtraction.}
-Running the target prompt $T$ alone (without any patching) produces a baseline logit vector $\mathbf{z}_b$, which captures the language prior induced by $T$.
-For instance, the question suffix \texttt{\# The value of x is "} may assign non-trivial probability to certain digits even without any code context.
-To isolate the contribution of the patched hidden state, we subtract this baseline:
+Running $T$ alone (without patching) produces a baseline logit vector $\mathbf{z}_b$ capturing the language prior induced by the question suffix.
+To isolate the contribution of the patched hidden state:
 \begin{equation}
 \label{eq:csd_subtract}
 \mathbf{z}_{\mathrm{CSD}}^\ell = \mathbf{z}_{\mathrm{patch}}^\ell - \mathbf{z}_b.
 \end{equation}
-Finally, we apply softmax and restrict the resulting distribution to the target token set $\mathcal{T} = \mathcal{D} \cup \{\bar{d}\}$, where $\mathcal{D} = \{0, 1, \dots, 9\}$ is the set of digit tokens and $\bar{d}$ is a residual class:
+We then apply softmax restricted to the target token set $\mathcal{T} = \mathcal{D} \cup \{\bar{d}\}$:
 \begin{equation}
 \label{eq:csd_distribution}
 \Phi_{\mathrm{C}}^\ell(\mathbf{h}^\ell)[t] = \frac{\exp(\mathbf{z}_{\mathrm{CSD}}^\ell[t])}{\sum_{t' \in \mathcal{T}} \exp(\mathbf{z}_{\mathrm{CSD}}^\ell[t'])}, \quad t \in \mathcal{T}.
 \end{equation}
-This recovers the CSD distribution defined in \cref{eq:csd}.
 
-\paragraph{Step 4: Practical considerations.}
-Several implementation details are worth noting:
+\paragraph{Practical considerations.}
 
 \begin{itemize}
-    \item \textbf{Layer-wise independence.} Patching is performed at each layer $\ell \in \{0, \dots, L{-}1\}$ independently.
-    Each layer produces its own CSD distribution $\Phi_{\mathrm{C}}^\ell$; there is no cross-layer interaction between patching runs.
+    \item \textbf{Layer-wise independence.} Patching at each layer $\ell$ is independent; there is no cross-layer interaction between patching runs.
 
-    \item \textbf{Baseline reuse.} The baseline logit $\mathbf{z}_b$ depends only on the target prompt $T$ and is therefore identical across all layers for a given sample.
-    We compute $\mathbf{z}_b$ once and reuse it for all $L$ patching runs, reducing the total number of forward passes from $2L$ to $L{+}1$ per sample.
+    \item \textbf{Baseline reuse.} Since $\mathbf{z}_b$ depends only on $T$, we compute it once and reuse it for all $L$ layers, reducing forward passes from $2L$ to $L{+}1$ per sample.
 
-    \item \textbf{Hook-based implementation.} In practice, we implement the hidden-state replacement using PyTorch forward hooks.
-    A hook registered at layer $\ell$ intercepts the target run's hidden state and overwrites the last-token position with $\mathbf{h}^\ell_S$.
-    This avoids modifying the model architecture and allows patching at arbitrary layers without rerunning earlier layers of the target pass.
-
-    \item \textbf{Positional encoding.} Because the source prompt $S$ and target prompt $T$ have different lengths, the absolute position index of the last token differs between the two runs.
-    Following \citet{ghandeharioun2024patchscopes}, we do not adjust positional encodings when patching; the injected hidden state retains the positional information from the source run.
-    In the Qwen2.5-Coder architecture, which uses Rotary Position Embeddings (RoPE), this means the patched state carries the source-side rotary phase.
-    We verified empirically that this does not degrade the diagnostic's discriminative power for our single-token prediction task.
+    \item \textbf{Positional encoding.} Because $S$ and $T$ have different lengths, the patched hidden state retains the source-side positional information. Following \citet{ghandeharioun2024patchscopes}, we do not adjust positional encodings; we verified empirically that this does not degrade discriminative power for our single-token prediction task.
 \end{itemize}

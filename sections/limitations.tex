@@ -1,0 +1,9 @@
+% =============================================================
+% Limitations
+% =============================================================
+
+\section*{Limitations}
+
+The most fundamental constraint is granularity. Both probing and CSD operate at layer level, which suffices for identifying \emph{when} brewing-to-resolution transitions occur but cannot pinpoint \emph{which} attention heads or MLP sublayers drive them. This same coarseness interacts with our single-token output restriction: because each answer is a single digit, we can cleanly compare diagnostic distributions across layers, but we lose the ability to study how multi-step decoding interacts with the brewing process. Extending the framework to multi-token targets would require both finer-grained attribution (e.g., path patching to individual components) and a rethinking of how CSD baselines are constructed.
+
+Our benchmark deliberately uses short, single-primitive programs to isolate reasoning primitives from long-context effects. Whether the brewing dynamics we observe---particularly the task-specific FCL orderings---persist in compositional, multi-statement code remains an open empirical question. The main-text analysis anchors on Qwen2.5-Coder-7B; we verify core findings across five families and scales up to 14B (\cref{app:cross_architecture_and_scaling}), but computational constraints prevented running every experiment across all models. The GT-free outcome classification (\cref{sec:brewing}) reduces this annotation bottleneck, though its residual disagreement with supervised labels means deployment-oriented uses such as confidence estimation would still require calibration.

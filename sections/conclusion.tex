@@ -1,84 +1,15 @@
 % =============================================================
-% Discussion, Limitations, Future Directions — commented out for now
-% =============================================================
-
-% \section{Discussion}
-% \label{sec:discussion}
-%
-% Our results suggest a simple reinterpretation of code reasoning in LLMs. The right question is not only whether a model gets a program-analysis problem right, but also \textbf{how it traverses the path from latent information to stable resolution}. Once that path is made visible, two points become hard to ignore. First, code reasoning is a staged internal process rather than a final-layer event. Second, different code primitives stress different parts of that process. The practical implication is that many model failures that look identical at the output level are mechanistically different inside.
-%
-% % 中文: 我们的结果支持一种对 LLM 代码推理的重新理解。真正应该问的问题，不只是模型最后有没有把程序分析题做对，而是它是如何从潜在信息一步步走到稳定 resolution 的。一旦这条路径变得可见，有两点就很难忽视。第一，代码推理是一个分阶段的内部过程，而不是最终层的事件。第二，不同代码原语会给这条过程的不同环节施加压力。其实际含义是：很多在输出层面看起来相同的失败，在模型内部其实是机制不同的。
-%
-% \subsection{Main Takeaways}
-% \label{subsec:takeaways}
-%
-% The first takeaway is about \textbf{structure}. The brewing process appears across tasks, models, and scales, and it occupies a non-trivial fraction of the network depth. This makes it difficult to regard correct code reasoning as a simple matter of last-layer readout. The model often ``has'' the answer before it can stably use it.
-%
-% % 中文: 第一条 takeaway 关乎结构。brewing 过程跨任务、跨模型、跨规模出现，而且占据了网络深度中不可忽略的一部分。这使得我们很难再把正确代码推理理解成一种简单的"最终层读出"现象。模型往往会先"拥有"答案，然后才学会稳定地使用它。
-%
-% The second takeaway is about \textbf{failure heterogeneity}. Overprocessed, Misresolved, and Unresolved are not just three ways of being wrong; they correspond to different failure locations in the computation. Overprocessed fails after internal success, Misresolved fails by settling on the wrong attractor, and Unresolved fails by not finishing. Treating these as one undifferentiated error category obscures both science and engineering opportunities.
-%
-% % 中文: 第二条 takeaway 关乎 failure heterogeneity。Overprocessed、Misresolved 和 Unresolved 不是三种表面上"都做错了"的情况，而是计算链条上不同位置的失败。Overprocessed 是内部已经成功后又失败，Misresolved 是收敛到了错误吸引子，Unresolved 是没有算完。把它们混成一个统一错误类别，会同时掩盖科学问题与工程机会。
-%
-% The third takeaway is about \textbf{code specificity}. The strongest result of \cref{sec:code_findings} is that different code primitives induce different outcome fingerprints and different brewing dynamics. This argues against treating ``code understanding'' as a single scalar capability. A model may be strong at variable propagation, fragile under arithmetic composition, and especially brittle when loop semantics or dynamic branch pruning are involved.
-%
-% % 中文: 第三条 takeaway 关乎 code specificity。实验最强的结果是：不同 code primitive 会诱导出不同的 outcome fingerprint 和不同的 brewing dynamics。这不支持把 "code understanding" 看作一个单一标量能力。一个模型可能很擅长变量传播，但在算术组合下变脆弱，或者在 loop semantics 与动态分支裁剪上尤其不稳定。
-%
-% \subsection{Implications}
-% \label{subsec:implications}
-%
-% \paragraph{Failure-mode diagnosis.}
-% The taxonomy provides a language for explaining why a sample failed. If the model is Overprocessed, then the right intervention is to stop or bypass late computation. If it is Unresolved, then more effective depth may help. If it is Misresolved, the problem is not lack of convergence but convergence to the wrong internal hypothesis. This distinction matters for both evaluation and intervention design.
-%
-% % 中文: 这套 taxonomy 为"为什么失败"提供了语言。如果样本属于 Overprocessed，合适的干预可能是停止或跳过后期计算；如果属于 Unresolved，额外有效深度可能有帮助；如果属于 Misresolved，问题则不是没有收敛，而是收敛到了错误内部假设。这个区分对评测和干预设计都很重要。
-%
-% \paragraph{GT-free confidence estimation.}
-% Because brewing and outcome structure leave signatures in the model's own distributions, internal signals can act as uncertainty indicators without access to ground truth. This opens a route toward confidence estimation that is tied to the model's actual reasoning trajectory rather than only its final-token probability. For code agents, that distinction is attractive: a model can be linguistically confident while still being mechanistically unresolved.
-%
-% % 中文: 由于 brewing 和 outcome 结构会在模型自身分布中留下信号，内部 signal 可以在不访问 ground truth 的情况下充当不确定性指示器。这为一种新的置信度估计路径打开了空间：它不只依赖最终 token 概率，而是依赖模型真实的 reasoning trajectory。对 code agent 来说，这个区别很有吸引力，因为模型可以在语言上显得 confident，但在机制上仍然 unresolved。
-%
-% \paragraph{Adaptive computation.}
-% Overprocessed and Unresolved together suggest that fixed-depth decoding is often mismatched to the sample. Some inputs would benefit from stopping earlier; others from continuing longer. Our causal and GT-free results therefore point toward dynamic computation policies that allocate depth conditionally on inferred reasoning state. We do not claim to solve that systems problem here, but the present results make the target more concrete.
-%
-% % 中文: Overprocessed 和 Unresolved 一起说明，固定深度解码往往与具体样本不匹配。有些输入应当更早停止，有些则应当获得更长计算。因而，我们的因果结果与 GT-free 结果共同指向一种动态计算策略：根据推断到的 reasoning state 按条件分配深度。本文并没有解决这个系统问题，但至少把目标刻画得更具体了。
-%
-% \paragraph{Benchmark design for code interpretability.}
-% The task-dependent fingerprints in \cref{sec:code_findings} suggest that code benchmarks should not be evaluated only by aggregate accuracy. Two models with similar top-line performance may have very different internal failure profiles, which matters if the downstream use case is verification, debugging, or agentic execution. The framework here offers one route to make those differences explicit.
-%
-% % 中文: 实验的任务依赖指纹说明，代码 benchmark 不应只看 aggregate accuracy。两个 top-line performance 相近的模型，内部 failure profile 可能完全不同；如果下游用途是 verification、debugging 或 agentic execution，这个差异就很关键。本文框架提供了一条把这种差异显式化的路径。
-%
-% \subsection{Limitations}
-% \label{subsec:limitations}
-%
-% Our study also has clear limitations. First, the benchmark is intentionally minimalistic: short programs, isolated primitives, and single-digit outputs. This gives clean signals, but it leaves open how brewing behaves in longer, compositional, multi-token code tasks.
-%
-% % 中文: 本文也有清晰的局限。第一，benchmark 是刻意极简化的：短程序、孤立原语、单 digit 输出。这带来了干净信号，但也留下一个开放问题：在更长、可组合、multi-token 的代码任务中，brewing 会如何表现？
-%
-% Second, our strongest evidence currently comes from a limited set of model families. Although the qualitative pattern is stable in the models we study, broader architectural coverage would make the generality claim stronger.
-%
-% % 中文: 目前最强的证据仍来自有限的模型家族。尽管我们研究的模型上定性模式是稳定的，但如果能覆盖更广的架构，关于一般性的 claim 会更强。
-%
-% Third, the analysis is layer-level rather than circuit-level. We identify when structured transitions happen, but not yet which heads, MLP blocks, or subcircuits implement them. That finer mechanistic question is important, but it is downstream of first establishing the right state-level structure.
-%
-% % 中文: 本文分析停留在 layer level，而不是 circuit level。我们能够指出结构化转变何时发生，但还没有识别究竟是哪些 heads、MLP block 或 subcircuits 在实现它们。这个更细粒度的问题当然重要，但它需要建立在先把 state-level 结构看清楚的前提之上。
-%
-% Fourth, some taxonomy boundaries remain design choices, especially the Misresolved/Unresolved split. We provide sensitivity analyses in the appendix, but the underlying phenomenon is still better viewed as a structured continuum than as a perfectly sharp partition.
-%
-% % 中文: 一些 taxonomy 边界仍然包含 design choice，尤其是 Misresolved 与 Unresolved 的分界。我们在附录中给出了 sensitivity analysis，但底层现象仍然更适合被理解为一种具有结构的连续体，而不是绝对锐利的离散划分。
-%
-% \subsection{Future Directions}
-% \label{subsec:future}
-%
-% One immediate direction is to move from isolated primitives to \textbf{compositional code reasoning}, where multiple primitives interact in a single sample. Another is to connect the layer-level state picture here to \textbf{circuit-level analysis}, asking which subnetworks create, preserve, or destroy resolvable answers. A third direction is \textbf{runtime control}: if GT-free signals can reliably identify brewing, overprocessing, or unresolved computation, then they may support early exit, selective re-computation, or self-verification policies during deployment. Finally, it is worth testing whether the same brewing-to-resolution structure appears outside code, in settings such as mathematical reasoning or symbolic planning, or whether code exposes a uniquely clean version of a more general transformer phenomenon.
-%
-% % 中文: 未来有几条直接的方向。第一，是从孤立原语走向 compositional code reasoning，观察多个原语在同一样本中如何相互作用。第二，是把本文的 layer-level state picture 连接到 circuit-level analysis，进一步问哪些子网络负责创造、保持或破坏可 resolution 的答案。第三，是 runtime control：如果 GT-free signal 真能稳定识别 brewing、overprocessing 或 unresolved computation，那么它们就可能支持早退出、选择性重计算或部署时的自验证策略。最后，也值得检验同样的 brewing-to-resolution 结构是否会出现在代码之外，例如数学推理或符号规划中，还是说代码只是把一种更一般的 transformer 现象暴露得更干净。
-
-% =============================================================
 % Conclusion
 % =============================================================
 
 \section{Conclusion}
 \label{sec:conclusion}
 
-% 中文: 我们提出了一个逐层追踪 LLM 代码推理的 dual diagnostic framework，揭示了一个从 brewing 到 resolution 的结构化内部过程，以及四种具有因果支持的 resolution outcome。不同 code primitive 诱导出不同的 outcome fingerprint，表明 code understanding 不是单一能力而是一组具有不同瓶颈的内部子过程。
-We proposed a dual diagnostic framework that traces code reasoning inside LLMs layer by layer, revealing a structured \textbf{brewing} process---answer information becomes externally readable before it becomes self-decodable---followed by four causally validated \textbf{resolution outcomes}. Different code primitives induce distinct outcome fingerprints, showing that code understanding is not a monolithic capability but a family of internal sub-processes with different bottlenecks. Because these states leave ground-truth-free traces in the model's own distributions, the framework opens paths toward failure diagnosis, confidence estimation, and adaptive computation in code-related LLM deployments.
+% 中文: 核心综合——brewing 揭示 transformer 深度的双重角色：计算答案 vs. 将答案重新格式化为可解码形式。这不是同一个过程，且后半段才是主要失败来源。
+The central lesson of the brewing-to-resolution framework is that transformer depth serves two separable functions in code reasoning: \emph{computing} the answer and \emph{reformatting} it into a self-decodable state. These are not the same process---probing recovers the answer around 20\% depth while CSD catches up only near 72\%---and the gap between them is where most of the network's work happens. That the brewing scaffold remains stable across architectures and scales while resolution success changes with capability suggests these two functions are governed by different aspects of the model: the residual-stream geometry determines \emph{where} the transition occurs, while learned skill determines \emph{whether} it succeeds.
+
+% 中文: 这改变了我们对 overthinking 和 early exit 的理解——问题不是模型"想太多"，而是后层主动破坏已有的正确计算。Overprocessed 是跨任务的主导失败模式。
+This reframes the overthinking problem. Prior work treats overthinking as excess computation on easy inputs \citep{halawi2024overthinking}; our causal experiments show it is better understood as late-layer corruption of already-correct computation---and it is the dominant failure mode across all six task families, including control-flow tasks that are otherwise well-handled. Early-exit strategies that rely on output-distribution confidence may therefore be insufficient: the model's own decoding head is precisely what destroys the answer.
+
+% 中文: 开放问题——为什么后层会破坏？brewing 是残差流架构的结构性后果还是训练动态的产物？
+Two questions remain genuinely open. First, \emph{why} do late layers corrupt correct answers---is Overprocessing driven by representational interference from the unembedding matrix, by attention heads that over-attend to surface cues, or by something else? The causal tools introduced here can localize the phenomenon but do not yet explain its mechanism. Second, the stability of brewing across architectures raises a deeper question: is the availability-before-readiness ordering a necessary consequence of how residual streams accumulate information, or a contingent property of current training regimes that could be eliminated?

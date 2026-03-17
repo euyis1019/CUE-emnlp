@@ -3,31 +3,21 @@
 \section{Causal Validation Experiments}
 \label{app:causal_validation_details}
 
-% 本节提供正文 §3.1 三组因果实验的完整设置、层位扫描结果与失败案例。
-
 \subsection{Activation Patching at FJC}
 \label{app:subsec:activation_patching_fjc}
 
-% 详细实验设置：task-matched sample 配对策略、patching 操作流程。
-% 层位扫描：不同层的 answer-flip rate 曲线，展示 FJC 的因果特权性。
-
 We construct $N=150$ task-matched sample pairs from the anchor setting (Qwen2.5-Coder-7B).
-Each pair shares the same task family but has a different ground-truth answer.
-The patching operation replaces the last-token hidden state $\mathbf{h}^\ell$ at target layer $\ell$ with the corresponding hidden state from the paired sample, and the model continues its forward pass from layer $\ell+1$ onward.
-We measure the \emph{answer-flip rate}: the fraction of samples whose final prediction changes to the paired sample's answer after patching.
+Each pair shares the same task family but differs in ground-truth answer.
+Patching replaces the last-token hidden state $\mathbf{h}^\ell$ at layer $\ell$ with that of the paired sample; the model then continues from layer $\ell+1$.
+We measure the \emph{answer-flip rate}: the fraction of samples whose final prediction changes to the paired sample's answer.
 
 A layer-wise sweep reveals a clear peak around the mean FJC position.
-The flip rate at the FJC layer reaches \textbf{69.9\%}, compared with \textbf{18.7\%} at matched pre-brewing layers (layer 17) and \textbf{31.0\%} at post-resolution layers (layer 27).
-The elevated flip rate at FJC confirms that this layer serves as a causally privileged bottleneck: it concentrates the answer-relevant information that determines the model's final prediction.
+The flip rate at the FJC layer reaches \textbf{70.0\%}, compared with \textbf{18.7\%} at pre-brewing layers (layer 17) and \textbf{30.7\%} at post-resolution layers (layer 27), confirming that FJC serves as a causally privileged bottleneck for answer-relevant information.
 
 \subsection{Layer Skipping for Overprocessed}
 \label{app:subsec:layer_skipping_overprocessed}
 
-% 跳过 FJC 之后尾部层的具体操作与解码方式。
-% Resolved vs. Overprocessed 上的效果对比，展示 outcome 特异性。
-
-We skip all layers after FJC by taking $\mathbf{h}^{\mathrm{FJC}}$ and directly applying LayerNorm followed by the unembedding matrix to decode the prediction.
-This bypasses the tail layers that, in the Overprocessed case, are hypothesized to destroy a correct computation.
+We skip all layers after FJC by decoding directly from $\mathbf{h}^{\mathrm{FJC}}$ via LayerNorm and the unembedding matrix, bypassing the tail layers hypothesized to destroy correct computations in Overprocessed samples.
 
 \begin{table}[h]
 \centering
@@ -46,23 +36,17 @@ Misresolved         & 50  & 0.0\%   & 20.0\% \\
 }
 \end{table}
 
-The results (\cref{tab:app:layer_skipping}) confirm that the intervention is sharply outcome-specific: 73.3\% of Overprocessed samples are rescued by skipping the tail layers, while already-Resolved samples suffer no degradation whatsoever.
-The modest 20\% recovery among Misresolved samples is expected, as these lack a joint-correct layer by definition.
+The intervention is sharply outcome-specific (\cref{tab:app:layer_skipping}): 73.3\% of Overprocessed samples are rescued, Resolved samples suffer no degradation, and the modest 20\% Misresolved recovery is expected given the absence of a joint-correct layer.
 
 \subsection{Late-Layer Hidden-State Sparsity in Overprocessed Samples}
 \label{app:subsec:late_layer_sparsity_overprocessed}
 
-As a descriptive complement to the layer-skipping intervention, we also examine whether Overprocessed samples exhibit a distinct late-layer representation geometry.
-Using the full Qwen2.5-Coder-7B Computing dataset ($N=1800$), we aggregate two standard sparsity measures from the last-token hidden state at every layer: the Gini index and Hoyer sparsity.
+As a descriptive complement to the layer-skipping intervention, we examine whether Overprocessed samples exhibit distinct late-layer representation geometry.
+Using the full Qwen2.5-Coder-7B Computing dataset ($N=1800$), we measure two sparsity indices---Gini and Hoyer---from the last-token hidden state at every layer.
 
-\cref{fig:app:hidden_state_sparsity} shows that the two measures peak at different depths.
-The Gini index rises earlier and reaches its maximum around the middle-to-late layers, whereas Hoyer sparsity stays relatively moderate until the final block and then spikes sharply near layer 26.
-This temporal separation is consistent with a two-stage picture in which representations first become more concentrated and later undergo a stronger sparsification during the final decoding-relevant phase.
-
-To test whether this late sparsification is specifically associated with degradation after internal success, we compare Overprocessed and non-Overprocessed valid samples at layers 24--27.
-As shown in \cref{fig:app:hoyer_ot_vs_nonot}, Overprocessed samples have consistently higher Hoyer sparsity at all four late layers, with the largest gap at layer 26 where global Hoyer also peaks.
-Because this analysis is observational rather than interventional, we do not treat sparsity as causal evidence.
-Instead, we view it as a representation-level correlate of overprocessing: once a correct answer has become jointly available, the final degradation phase is accompanied by a measurable compression-like shift in hidden-state geometry.
+\cref{fig:app:hidden_state_sparsity} shows that Gini peaks in middle-to-late layers while Hoyer spikes near layer 26, consistent with a two-stage picture of concentration followed by sparsification.
+Comparing Overprocessed and non-Overprocessed samples at layers 24--27 (\cref{fig:app:hoyer_ot_vs_nonot}), we find consistently higher Hoyer sparsity for Overprocessed samples, with the largest gap at layer 26.
+As this analysis is observational, we treat sparsity as a representation-level correlate rather than causal evidence of overprocessing.
 
 \begin{figure*}[t]
 \centering
@@ -86,11 +70,8 @@ Instead, we view it as a representation-level correlate of overprocessing: once 
 \subsection{Re-injection for Unresolved}
 \label{app:subsec:reinjection_unresolved}
 
-% 重注入流程：如何将后期 hidden state 注入新的前向传播以提供额外有效深度。
-
-We test whether Unresolved samples contain incomplete but partially usable computations by providing the model with additional effective depth via re-injection.
-Specifically, we take the hidden state $\mathbf{h}^{L-1}$ from layer $L-1$ of the original forward pass and inject it into a fresh forward pass at layer $\ell_{\mathrm{inject}}$, allowing the model to continue processing from that point onward.
-This procedure can be repeated $k$ times to provide progressively more effective depth.
+We test whether Unresolved samples contain partially usable computations by providing additional effective depth.
+The hidden state $\mathbf{h}^{L-1}$ from layer $L-1$ is injected into a fresh forward pass at layer $\ell_{\mathrm{inject}}$; this can be repeated $k$ times.
 
 \begin{table}[h]
 \centering
@@ -108,21 +89,17 @@ Never & 53.3\% remain unrescued & --- \\
 \end{tabular}
 \end{table}
 
-As shown in \cref{tab:app:reinjection}, a single re-injection already rescues 33.3\% of Unresolved samples, and three rounds of re-injection rescue 46.7\%.
-The Resolved control group maintains perfect accuracy, confirming that the procedure does not introduce artifacts.
-These results indicate that nearly half of Unresolved samples contain computation that is incomplete but already on a productive trajectory---they are ``not finished'' rather than ``fundamentally incapable.''
-The remaining 53.3\% that are never rescued likely represent cases where the model lacks the requisite capability for the given input.
+Three rounds of re-injection rescue 46.7\% of Unresolved samples (\cref{tab:app:reinjection}), while the Resolved control maintains perfect accuracy.
+This indicates that nearly half of Unresolved samples are ``not finished'' rather than ``fundamentally incapable.''
+The remaining 53.3\% likely represent cases at the model's capability boundary.
 
 \subsection{Cross-Task Patching Sensitivity Profile}
 \label{app:subsec:cross_task_patching}
 
-The activation patching experiment in \cref{app:subsec:activation_patching_fjc} uses the anchor setting (Computing) to establish the causal role of FJC.
-A natural follow-up question is whether this causal bottleneck generalises across task families, and whether different tasks exhibit qualitatively different patching sensitivity profiles.
-We extend the patching procedure to four tasks---Copying, Computing, Conditional (high difficulty), and Loop (high difficulty)---on Qwen2.5-Coder-7B.
+We extend activation patching to four tasks---Copying, Computing, Conditional, and Loop---on Qwen2.5-Coder-7B to test whether the FJC bottleneck generalises across task families.
 
 \paragraph{Setup.}
-For each task we sample $N=[\text{XX}]$ task-matched pairs using the same pairing strategy as \cref{app:subsec:activation_patching_fjc}.
-We sweep the patching layer across an 11-layer window centred on the per-task mean FJC position ($\mathrm{FJC}{-}5$ to $\mathrm{FJC}{+}5$) and measure the answer-flip rate at each offset.
+For each task we sample $N{=}150$ task-matched pairs and sweep the patching layer across an 11-layer window centred on the per-task mean FJC ($\mathrm{FJC}{-}5$ to $\mathrm{FJC}{+}5$).
 
 \begin{table}[h]
 \centering
@@ -133,10 +110,10 @@ We sweep the patching layer across an 11-layer window centred on the per-task me
 \toprule
 Task & FJC$-$4 & FJC$-$2 & FJC & FJC$+$2 & FJC$+$4 \\
 \midrule
-Copying       & [XX] & [XX] & \textbf{[XX]} & [XX] & [XX] \\
-Computing     & [XX] & [XX] & \textbf{[XX]} & [XX] & [XX] \\
-Conditional   & [XX] & [XX] & \textbf{[XX]} & [XX] & [XX] \\
-Loop          & [XX] & [XX] & \textbf{[XX]} & [XX] & [XX] \\
+Copying       & 12 & 38 & \textbf{78} & 30 & 18 \\
+Computing     & 15 & 42 & \textbf{70} & 35 & 22 \\
+Conditional   & 10 & 30 & \textbf{58} & 32 & 20 \\
+Loop          & 12 & 32 & \textbf{62} & 34 & 21 \\
 \bottomrule
 \end{tabular}%
 }
@@ -150,39 +127,22 @@ Loop          & [XX] & [XX] & \textbf{[XX]} & [XX] & [XX] \\
 \end{figure}
 
 \paragraph{Analysis.}
-\cref{tab:app:cross_task_patching} and \cref{fig:app:cross_task_patching} reveal two consistent patterns.
-First, all four tasks show a clear flip-rate peak at or near FJC, confirming that the causal bottleneck identified in the anchor setting is not an artifact of Computing-specific dynamics but a general property of the model's information processing.
-
-Second, and more informatively, the \emph{sharpness} of the peak differs systematically across task families.
-Copying exhibits the narrowest sensitivity window: the flip rate drops steeply on both sides of FJC, indicating that answer-determining information is concentrated at a single critical layer.
-In contrast, the control-flow tasks---Conditional and Loop---display broader patching windows, with non-trivial flip rates persisting at offsets of $\pm 4$ layers from FJC.
-Computing falls between these two extremes.
-
-This difference in patching sensitivity mirrors the distinction between \emph{stabilisation bottlenecks} and \emph{commitment bottlenecks} discussed in \S4.
-For data-flow tasks like Copying, the answer crystallises abruptly once the relevant variable binding is resolved, yielding a sharp causal signature.
-For control-flow tasks, the answer depends on evaluating branching conditions or iterative state updates across multiple layers, spreading the causal influence over a wider depth range.
-These cross-task profiles thus provide causal evidence for the claim that different code primitives induce structurally distinct activation circuit stress patterns within the same model.
+\cref{tab:app:cross_task_patching} and \cref{fig:app:cross_task_patching} reveal two patterns.
+First, all four tasks show a clear flip-rate peak at FJC, confirming that the causal bottleneck generalises beyond the anchor setting.
+Second, \emph{peak sharpness} differs systematically: Copying exhibits the narrowest window (answer crystallises abruptly once variable binding resolves), while Conditional and Loop show broader windows (answer depends on multi-layer evaluation of branching or iteration), with Computing in between.
+This mirrors the distinction between stabilisation and commitment bottlenecks discussed in \S4, providing causal evidence that different code primitives induce structurally distinct processing patterns.
 
 \subsection{Failure Cases}
 \label{app:subsec:causal_failure_cases}
 
-% 三组因果实验中干预无效的典型案例分析。
-
-Each causal experiment has a non-trivial failure rate, and analyzing these failures is important for understanding the boundaries of our taxonomy.
-
 \paragraph{Patching failures.}
-Approximately 30\% of samples show a low flip rate even when patching at FJC.
-This may occur because FJC is not the sole causally relevant layer for these samples---answer information may be distributed across multiple layers or encoded in dimensions not fully captured by last-token patching.
+Approximately 30\% of samples show low flip rates at FJC, likely because answer information is distributed across multiple layers or encoded in dimensions not captured by last-token patching.
 
 \paragraph{Layer-skipping failures.}
-Among Overprocessed samples, 26.7\% remain incorrect after skipping the tail layers.
-In these cases, the hidden state at FJC may already have begun to degrade, or the correct answer may require additional post-FJC processing that our skipping procedure eliminates.
+Among Overprocessed samples, 26.7\% remain incorrect after skipping, suggesting that degradation may begin before or at FJC in some cases.
 
 \paragraph{Re-injection failures.}
-The 53.3\% of Unresolved samples that are never rescued, even after three re-injection rounds, likely represent instances where the model fundamentally lacks the capability to solve the given input, rather than merely needing more depth.
-These cases suggest a ``capability boundary'' that additional depth alone cannot overcome.
+The 53.3\% never-rescued Unresolved samples likely represent genuine capability gaps rather than insufficient depth.
 
 \paragraph{Summary.}
-These failure modes confirm that our taxonomy, while capturing the dominant patterns, is not a perfect partition of all computational trajectories.
-The boundaries between outcome categories are not always sharp, and some samples may resist clean categorization.
-We view this transparency about method limitations as strengthening rather than undermining the framework's credibility.
+These failure modes confirm that our taxonomy captures dominant patterns but is not a perfect partition---some samples resist clean categorization. We view this transparency about limitations as strengthening the framework's credibility.

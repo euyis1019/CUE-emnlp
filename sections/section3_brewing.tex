@@ -34,7 +34,7 @@ In the anchor setting, FPCL occurs at mean normalized depth 20\% and FJC at 72\%
 \end{equation}
 %
 % 中文: 那么一旦到达（或未能到达）FJC，后续轨迹是否统一？
-averages 14.5 layers (52\% of total depth), confirming that this intermediate process is far from marginal. Does the trajectory become uniform once FJC is reached---or not reached?
+averages 14.5 layers (52\% of total depth), far from a marginal intermediate process. Does the trajectory become uniform once FJC is reached---or not reached?
 
 % 中文: 答案是否定的。Figure~\ref{fig:resolution_taxonomy} 示意了 brewing 过程及其后续分化的四种 resolution outcome。
 The answer is no. \cref{fig:resolution_taxonomy} illustrates the brewing process and the four \textbf{resolution outcomes} into which trajectories subsequently diverge. Let $\bar{\Phi}_{\mathcal{W}}(t) \triangleq \frac{1}{|\mathcal{W}|}\sum_{\ell \in \mathcal{W}} \Phi_{\mathrm{C}}^\ell(\mathbf{h}^\ell)[t]$ denote the average CSD probability assigned to digit $t$ over a tail window $\mathcal{W} = \{\ell \mid \ell \geq \lfloor 3L/4 \rfloor\}$. The four outcome categories are defined as follows:
@@ -55,7 +55,7 @@ $}
 Intuitively, Resolved and Overprocessed are distinguished by whether subsequent layers preserve the correct answer after it has been jointly attested by both diagnostics: Overprocessed means that a correct computation was formed yet destroyed by later layers. Misresolved and Unresolved characterize two distinct failure modes: the former converges to a stable but incorrect answer, while the latter never reaches a stable resolution within the available depth.
 %
 % 中文: 值得注意的是，$\mathrm{FJC} = \varnothing$ 的样本中仅有 [0.2]\% 最终输出正确，即缺少 FJC 几乎等价于最终做错。
-Notably, only 0.65\% of samples with $\mathrm{FJC} = \varnothing$ produce a correct final output, meaning the absence of FJC is near-equivalent to an incorrect answer.
+Only 0.65\% of samples with $\mathrm{FJC} = \varnothing$ produce a correct final output, meaning the absence of FJC is near-equivalent to an incorrect answer.
 
 % 中文: 在上述 setting 中，四类 outcome 分别占 [XX]\% Resolved、[XX]\% Overprocessed、[XX]\% Misresolved 和 [XX]\% Unresolved，共覆盖 [XX]\% 的样本。但这套分类目前仍然是描述性的——它是否反映了真实的内部计算结构，需要因果证据来回答。
 In the anchor setting, the four categories account for 79.2\% Resolved, 15.1\% Overprocessed, 4.3\% Misresolved, and 1.3\% Unresolved, covering 99.9\% of all samples (\cref{app:outcome_distribution_statistics}). However, this taxonomy remains descriptive so far---whether it reflects genuine internal computational structure requires causal evidence.
@@ -68,7 +68,7 @@ If FJC and the four outcomes correspond to real internal structure, then interve
 
 % 中文: 在 FJC 层用答案不同但任务匹配的样本的 hidden state 替换原始 hidden state，观察最终预测是否被改写。如果 FJC 是因果特权层，patching 在此处的 answer-flip rate 应显著高于其他层。
 \paragraph{Activation patching at FJC.}
-Following causal localization methods \citep{meng2022locating, geiger2023causal}, we replace $\mathbf{h}^{\mathrm{FJC}}$ with the hidden state from a task-matched sample that has a different answer, and observe whether the final prediction is overwritten. If FJC is a causally privileged layer, the answer-flip rate should be substantially higher there than elsewhere. Result: the flip rate at FJC is 69.9\% ($N=150$), compared with 18.7\% at matched pre-brewing layers and 31.0\% at post-resolution layers.
+Following causal localization methods \citep{meng2022locating, geiger2023causal}, we replace $\mathbf{h}^{\mathrm{FJC}}$ with the hidden state from a task-matched sample that has a different answer, and observe whether the final prediction is overwritten. If FJC is a causally privileged layer, the answer-flip rate should be substantially higher there than elsewhere. Result: the flip rate at FJC is 70.0\% ($N=150$), compared with 18.7\% at matched pre-brewing layers and 30.7\% at post-resolution layers.
 
 % 中文: Overprocessed 的定义蕴含正确计算已形成但被后续层破坏。若如此，跳过 FJC 之后的尾部层、直接从 $\mathbf{h}^{\mathrm{FJC}}$ 解码应当恢复正确答案。
 \paragraph{Layer skipping for Overprocessed.}
@@ -80,7 +80,7 @@ Consistent with this interpretation, late-layer hidden states also exhibit a dis
 If Unresolved means ``not finished'' rather than ``fundamentally incapable,'' then providing the model with additional effective depth should rescue some samples. We re-inject late hidden states into a fresh forward pass; a single re-injection rescues 33.3\% of cases, and up to three re-injections rescue 46.7\% ($N=150$), indicating that a substantial fraction of Unresolved samples contain incomplete but already usable computation.
 
 % 中文: 三组干预各自针对 taxonomy 的不同分支，均产生了与对应 outcome 一致且对其他 outcome 不一致的效应，表明 brewing-to-resolution 捕捉的是模型内部计算的真实结构而非事后归纳。
-All three interventions target different branches of the taxonomy and each produces effects consistent with its corresponding outcome while inconsistent with the others, confirming that the brewing-to-resolution framework captures genuine internal computational structure rather than a post hoc narrative.
+All three interventions target different branches of the taxonomy and each produces effects consistent with its corresponding outcome while inconsistent with the others, indicating that the brewing-to-resolution framework captures genuine internal computational structure rather than a post hoc narrative.
 %
 % 中文: 这套结构同样在模型自身的输出分布中留下了可观测信号：CSD entropy、其下降速率、以及 probe-CSD agreement 三个 GT-free 量即可在不访问 ground truth 的情况下区分四类 outcome。§4 将利用这些信号，把分析从单一 anchor setting 推广到全部六类 code primitive 的跨任务、跨模型比较。
-This structure also leaves observable signatures in the model's own output distributions: the CSD entropy $H_{\mathrm{C}}^\ell$ and the probe--CSD distributional divergence---ground-truth-free quantities that achieve 87.0\% overall agreement with the true outcome labels (\cref{app:ground_truth_free_discrimination}). \S4 leverages these signals to extend the analysis from the single anchor setting to cross-task and cross-model comparisons across all six code primitives.
+This structure also leaves observable signatures in the model's own output distributions: the CSD entropy $H_{\mathrm{C}}^\ell$ and the probe--CSD distributional divergence---ground-truth-free quantities that achieve 87.0\% overall agreement with the true outcome labels (\cref{app:ground_truth_free_discrimination}). \cref{sec:code_findings} extends the analysis from the single anchor setting to all six code primitives, examining how outcome fingerprints and brewing dynamics vary across tasks, models, and scales.
