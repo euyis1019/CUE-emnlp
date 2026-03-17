@@ -24,14 +24,15 @@ All results use the anchor model Qwen2.5-Coder-7B ($L{=}28$ layers) unless state
 \caption{Full outcome fingerprints for Qwen2.5-Coder-7B across all six task families, with per-task commentary on failure characteristics.
 Res.\ = Resolved, OT = Overprocessed, MR = Misresolved, UR = Unresolved.}
 \label{tab:app:outcome_fingerprint_full}
+\resizebox{\textwidth}{!}{%
 \begin{tabular}{lrccccp{5.8cm}}
 \toprule
 Task & $N$ & Res.\% & OT\% & MR\% & UR\% & Commentary \\
 \midrule
 Pure Copying & 200 & 79.0 & 21.0 & 0.0 & 0.0 &
 No MR or UR: the model always converges, but 21\% of samples are overprocessed---late layers corrupt a once-correct trace. \\
-Computing & 207 & 29.4 & 33.4 & 20.4 & 16.8 &
-Uniquely difficult: all four outcomes present in substantial proportions. High OT (33.4\%) and UR (16.8\%) indicate both late-layer corruption and complete failure to converge. \\
+Computing & 207 & 33.5 & 45.9 & 12.4 & 8.1 &
+Uniquely difficult: all four outcomes present in substantial proportions. Overprocessed dominates (45.9\%), yet it is the only task with notable MR (12.4\%) and UR (8.1\%), indicating qualitatively different failure modes. \\
 Loop Unrolled & 298 & 89.3 & 8.1 & 2.7 & 0.0 &
 Near-zero UR: the model always forms a convergence point. Residual MR (2.7\%) arises at high iteration counts. \\
 Loop & 408 & 84.8 & 10.8 & 3.9 & 0.5 &
@@ -41,15 +42,16 @@ OT and MR rise together at high nesting depths; UR appears only at depth 3, indi
 Short-circuit & 346 & 86.1 & 10.4 & 3.5 & 0.0 &
 Zero UR across all difficulty levels: the model always commits to an answer. Failures are exclusively OT or MR, consistent with the binary nature of short-circuit evaluation. \\
 \midrule
-Weighted avg. & 2001 & 78.8 & 13.8 & 5.1 & 2.2 & --- \\
+Weighted avg. & 2001 & 79.2 & 15.1 & 4.3 & 1.3 & --- \\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{table*}
 
 % 中文: 关键观察——Computing 是唯一四种 outcome 都显著存在的任务，其他任务以 Resolved + OT 为主。
 
 \textbf{Key observation.}
-Computing is the only task family where all four outcomes appear in substantial proportions ($>$15\% each for Res., OT, and MR+UR combined).
+Computing is the only task family where all four outcomes appear in substantial proportions (Res.\ 33.5\%, OT 45.9\%, MR 12.4\%, UR 8.1\%).
 The remaining five tasks share a common signature: Resolved $>$ 79\%, Overprocessed as the primary failure mode (8--21\%), and Misresolved and Unresolved together below 6\%.
 This dichotomy---\emph{arithmetic-heavy vs.\ control-flow}---is the organizing principle for the analyses that follow.
 
@@ -140,7 +142,8 @@ However, this masks meaningful variation across difficulty levels.
 \caption{Per-difficulty-level outcome distributions for all six task families on Qwen2.5-Coder-7B.
 Difficulty parameter varies by task: \emph{steps} for Copying and Computing (the latter at $\rho{=}1.0$), \emph{depth} for Conditional, \emph{num\_conditions} for Short-circuit, and \emph{iteration} for Loop and Loop Unrolled.}
 \label{tab:app:per_difficulty_outcome}
-\begin{tabular}{llrccccc}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llrcccc}
 \toprule
 Task & Difficulty & $N$ & Res.\% & OT\% & MR\% & UR\% \\
 \midrule
@@ -179,7 +182,8 @@ Task & Difficulty & $N$ & Res.\% & OT\% & MR\% & UR\% \\
  & iteration = 3 & [XX] & [XX] & [XX] & [XX] & [XX] \\
  & iteration = 4 & [XX] & [XX] & [XX] & [XX] & [XX] \\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{table*}
 
 % 中文: 关键发现——不同任务随难度增加的失败模式分化明显。

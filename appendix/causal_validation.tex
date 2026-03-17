@@ -33,6 +33,7 @@ This bypasses the tail layers that, in the Overprocessed case, are hypothesized 
 \centering
 \caption{Layer-skipping results by outcome group. Pre-skip accuracy is the standard model accuracy; post-skip accuracy is obtained by decoding from $\mathbf{h}^{\mathrm{FJC}}$.}
 \label{tab:app:layer_skipping}
+\resizebox{\columnwidth}{!}{%
 \begin{tabular}{lccc}
 \toprule
 Outcome group & $N$ & Pre-skip acc. & Post-skip acc. \\
@@ -41,7 +42,8 @@ Overprocessed       & 75  & 0.0\%   & \textbf{73.3\%} \\
 Resolved (control)  & 25  & 100.0\% & \textbf{100.0\%} \\
 Misresolved         & 50  & 0.0\%   & 20.0\% \\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{table}
 
 The results (\cref{tab:app:layer_skipping}) confirm that the intervention is sharply outcome-specific: 73.3\% of Overprocessed samples are rescued by skipping the tail layers, while already-Resolved samples suffer no degradation whatsoever.

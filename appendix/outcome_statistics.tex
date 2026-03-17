@@ -18,6 +18,7 @@ Sample counts $N$ reflect the corrected sizes after balancing across tasks: non-
 \caption{Four-way outcome distribution for Qwen2.5-Coder-7B across all six task families.
 $N$ denotes the corrected sample count after balancing across tasks (see text).}
 \label{tab:app:outcome_distribution}
+\resizebox{\columnwidth}{!}{%
 \begin{tabular}{lrcccc}
 \toprule
 Task & $N$ & Res.\% & OT\% & MR\% & UR\% \\
@@ -31,7 +32,8 @@ Short-circuit    & 346 & 86.1 & 10.4 & 3.5 & 0.0 \\
 \midrule
 Weighted avg.    & 2001 & 79.2 & 15.1 & 4.3 & 1.3 \\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{table}
 
 Computing stands out as the most challenging family, with a Resolved rate
@@ -58,6 +60,7 @@ Pure Copying shows no Misresolved or Unresolved samples, consistent with its min
 for Qwen2.5-Coder-7B. All values in layers (total depth $L=28$);
 normalized depth in parentheses.}
 \label{tab:app:fpcl_fjc_positions}
+\resizebox{\columnwidth}{!}{%
 \begin{tabular}{lccc}
 \toprule
 Task & FPCL & FJC & $\Delta_{\mathrm{brew}}$ \\
@@ -71,7 +74,8 @@ Short-circuit    & 4.1 (15\%) & 19.6 (70\%) & 15.5 (55\%) \\
 \midrule
 Weighted avg.    & 5.6 (20\%) & 20.1 (72\%) & 14.5 (52\%) \\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{table}
 
 Two patterns are noteworthy.

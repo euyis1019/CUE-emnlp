@@ -29,7 +29,7 @@ Normalized depths in parentheses.}
 \toprule
 Model & Res.\% & OT\% & MR\% & UR\% & FPCL & FJC & $\Delta_{\mathrm{brew}}$ \\
 \midrule
-Qwen2.5-Coder-7B & 29.4 & 33.4 & 20.4 & 16.8 & 9.6 (34\%) & 20.8 (74\%) & 11.2 (40\%) \\
+Qwen2.5-Coder-7B & 33.5 & 45.9 & 12.4 & 8.1 & 9.6 (34\%) & 20.8 (74\%) & 11.2 (40\%) \\
 Qwen2.5-7B       & [XX] & [XX] & [XX] & [XX] & [XX] ([XX]\%) & [XX] ([XX]\%) & [XX] ([XX]\%) \\
 \bottomrule
 \end{tabular}%
@@ -39,7 +39,7 @@ Qwen2.5-7B       & [XX] & [XX] & [XX] & [XX] & [XX] ([XX]\%) & [XX] ([XX]\%) & [
 % 预期：Coder 的 Resolved 更高，UR 更低；FPCL/FJC 归一化位置接近。
 Two observations emerge.
 First, code-specialized training substantially improves the Resolved rate
-(29.4\% vs.\ [XX]\%) and reduces Unresolved outcomes (16.8\% vs.\ [XX]\%),
+(33.5\% vs.\ [XX]\%) and reduces Unresolved outcomes (8.1\% vs.\ [XX]\%),
 confirming that continued pre-training on code enhances \emph{capability} for
 arithmetic reasoning within code contexts.
 Second, the normalized FPCL and FJC positions remain similar across Coder
@@ -65,7 +65,7 @@ all task families.}
 Task & Coder-7B Res.\% & Base-7B Res.\% \\
 \midrule
 Pure Copying     & 79.0 & [XX] \\
-Computing        & 29.4 & [XX] \\
+Computing        & 33.5 & [XX] \\
 Loop Unrolled    & 89.3 & [XX] \\
 Loop             & 84.8 & [XX] \\
 Conditional      & 82.7 & [XX] \\
@@ -113,7 +113,7 @@ Scale & $L$ & Res.\% & OT\% & MR\% & UR\% & norm.\ $\Delta_{\mathrm{brew}}$\% \\
 0.5B  & 24 & [XX] & [XX] & [XX] & [XX] & [XX] \\
 1.5B  & 28 & [XX] & [XX] & [XX] & [XX] & [XX] \\
 3B    & 36 & [XX] & [XX] & [XX] & [XX] & [XX] \\
-7B    & 28 & 29.4 & 33.4 & 20.4 & 16.8 & 40 \\
+7B    & 28 & 33.5 & 45.9 & 12.4 & 8.1 & 40 \\
 14B   & 48 & [XX] & [XX] & [XX] & [XX] & [XX] \\
 \bottomrule
 \end{tabular}%
