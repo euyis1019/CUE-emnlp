@@ -58,21 +58,21 @@ Intuitively, Resolved and Overprocessed are distinguished by whether subsequent 
 Notably, only [0.2]\% of samples with $\mathrm{FJC} = \varnothing$ produce a correct final output, meaning the absence of FJC is near-equivalent to an incorrect answer.
 
 % 中文: 在上述 setting 中，四类 outcome 分别占 [XX]\% Resolved、[XX]\% Overprocessed、[XX]\% Misresolved 和 [XX]\% Unresolved，共覆盖 [XX]\% 的样本。但这套分类目前仍然是描述性的——它是否反映了真实的内部计算结构，需要因果证据来回答。
-In the anchor setting, the four categories account for [XX]\% Resolved, [XX]\% Overprocessed, [XX]\% Misresolved, and [XX]\% Unresolved, covering [XX]\% of all samples (\cref{app:outcomes}). However, this taxonomy remains descriptive so far---whether it reflects genuine internal computational structure requires causal evidence.
+In the anchor setting, the four categories account for [XX]\% Resolved, [XX]\% Overprocessed, [XX]\% Misresolved, and [XX]\% Unresolved, covering [XX]\% of all samples (\cref{app:outcome_distribution_statistics}). However, this taxonomy remains descriptive so far---whether it reflects genuine internal computational structure requires causal evidence.
 
 \subsection{Causal Validation}
 \label{subsec:causal_validation}
 
-% 中文: 如果 FJC 和四类 outcome 对应真实的内部结构，那么围绕它们的干预就应当产生可预测的、与 outcome 相关的效应。我们设计三组因果实验来检验这一点（详细设置、层位扫描与失败案例见 \cref{app:causal}）。
-If FJC and the four outcomes correspond to real internal structure, then interventions centered on them should produce predictable, outcome-specific effects. We design three causal experiments to test this (detailed setups, layer sweeps, and failure cases in \cref{app:causal}).
+% 中文: 如果 FJC 和四类 outcome 对应真实的内部结构，那么围绕它们的干预就应当产生可预测的、与 outcome 相关的效应。我们设计三组因果实验来检验这一点（详细设置、层位扫描与失败案例见 \cref{app:causal_validation_details}）。
+If FJC and the four outcomes correspond to real internal structure, then interventions centered on them should produce predictable, outcome-specific effects. We design three causal experiments to test this (detailed setups, layer sweeps, and failure cases in \cref{app:causal_validation_details}).
 
 % 中文: 在 FJC 层用答案不同但任务匹配的样本的 hidden state 替换原始 hidden state，观察最终预测是否被改写。如果 FJC 是因果特权层，patching 在此处的 answer-flip rate 应显著高于其他层。
 \paragraph{Activation patching at FJC.}
-We replace $\mathbf{h}^{\mathrm{FJC}}$ with the hidden state from a task-matched sample that has a different answer, and observe whether the final prediction is overwritten. If FJC is a causally privileged layer, the answer-flip rate should be substantially higher there than elsewhere. Result: the flip rate at FJC is [XX]\%, compared with [XX]\% at matched pre-brewing layers and [XX]\% at post-resolution layers.
+Following causal localization methods \citep{meng2022locating, geiger2023causal}, we replace $\mathbf{h}^{\mathrm{FJC}}$ with the hidden state from a task-matched sample that has a different answer, and observe whether the final prediction is overwritten. If FJC is a causally privileged layer, the answer-flip rate should be substantially higher there than elsewhere. Result: the flip rate at FJC is [XX]\%, compared with [XX]\% at matched pre-brewing layers and [XX]\% at post-resolution layers.
 
 % 中文: Overprocessed 的定义蕴含正确计算已形成但被后续层破坏。若如此，跳过 FJC 之后的尾部层、直接从 $\mathbf{h}^{\mathrm{FJC}}$ 解码应当恢复正确答案。
 \paragraph{Layer skipping for Overprocessed.}
-The definition of Overprocessed implies that a correct computation was formed but subsequently destroyed. If so, skipping the tail layers after FJC and decoding directly from $\mathbf{h}^{\mathrm{FJC}}$ should recover the correct answer. Result: on Overprocessed samples, skipping restores correctness in [YY]\% of cases; the same operation on already-Resolved samples degrades accuracy by only [Y.Y]\%---the effect is sharply outcome-specific.
+The definition of Overprocessed implies that a correct computation was formed but subsequently destroyed---akin to the overthinking phenomenon observed in prior work \citep{halawi2024overthinking, schuster2022confident}. If so, skipping the tail layers after FJC and decoding directly from $\mathbf{h}^{\mathrm{FJC}}$ should recover the correct answer. Result: on Overprocessed samples, skipping restores correctness in [YY]\% of cases; the same operation on already-Resolved samples degrades accuracy by only [Y.Y]\%---the effect is sharply outcome-specific.
 
 % 中文: 如果 Unresolved 意味着"没算完"而非"根本不会"，那么给模型额外的有效深度应能救回部分样本。我们将后期 hidden state 重新注入一次新的前向传播。
 \paragraph{Re-injection for Unresolved.}
@@ -82,4 +82,4 @@ If Unresolved means ``not finished'' rather than ``fundamentally incapable,'' th
 All three interventions target different branches of the taxonomy and each produces effects consistent with its corresponding outcome while inconsistent with the others, confirming that the brewing-to-resolution framework captures genuine internal computational structure rather than a post hoc narrative.
 %
 % 中文: 这套结构同样在模型自身的输出分布中留下了可观测信号：CSD entropy、其下降速率、以及 probe-CSD agreement 三个 GT-free 量即可在不访问 ground truth 的情况下区分四类 outcome。§4 将利用这些信号，把分析从单一 anchor setting 推广到全部六类 code primitive 的跨任务、跨模型比较。
-This structure also leaves observable signatures in the model's own output distributions: the CSD entropy $H_{\mathrm{C}}^\ell$, its descent rate, and the probe--CSD agreement $A^\ell = \mathbb{1}[\arg\max \Phi_{\mathrm{P}}^\ell = \arg\max \Phi_{\mathrm{C}}^\ell \in \mathcal{D}]$---three ground-truth-free quantities that suffice to distinguish the four outcomes without access to the correct answer (\cref{app:gtfree}). \S4 leverages these signals to extend the analysis from the single anchor setting to cross-task and cross-model comparisons across all six code primitives.
+This structure also leaves observable signatures in the model's own output distributions: the CSD entropy $H_{\mathrm{C}}^\ell$, its descent rate, and the probe--CSD agreement $A^\ell = \mathbb{1}[\arg\max \Phi_{\mathrm{P}}^\ell = \arg\max \Phi_{\mathrm{C}}^\ell \in \mathcal{D}]$---three ground-truth-free quantities that suffice to distinguish the four outcomes without access to the correct answer (\cref{app:ground_truth_free_discrimination}). \S4 leverages these signals to extend the analysis from the single anchor setting to cross-task and cross-model comparisons across all six code primitives.

@@ -1,0 +1,41 @@
+% Appendix E: Causal Validation Experiments
+
+\section{Causal Validation Experiments}
+\label{app:causal_validation_details}
+
+% 本节提供正文 §3.1 三组因果实验的完整设置、层位扫描结果与失败案例。
+
+\subsection{Activation Patching at FJC}
+\label{app:subsec:activation_patching_fjc}
+
+% 详细实验设置：task-matched sample 配对策略、patching 操作流程。
+% 层位扫描：不同层的 answer-flip rate 曲线，展示 FJC 的因果特权性。
+% 预期效果：读者可看到 FJC 层 flip rate 相对其他层的显著优势。
+
+% TODO: 插入 patching 实验细节与层位扫描图
+
+\subsection{Layer Skipping for Overprocessed}
+\label{app:subsec:layer_skipping_overprocessed}
+
+% 跳过 FJC 之后尾部层的具体操作与解码方式。
+% Resolved vs. Overprocessed 上的效果对比，展示 outcome 特异性。
+% 预期效果：证明 Overprocessed 确实是"先对后错"，跳过后期层可恢复。
+
+% TODO: 插入 layer skipping 实验结果
+
+\subsection{Re-injection for Unresolved}
+\label{app:subsec:reinjection_unresolved}
+
+% 重注入流程：如何将后期 hidden state 注入新的前向传播以提供额外有效深度。
+% Rescue rate 计算与结果。
+% 预期效果：证明 Unresolved 多数是"没算完"而非"根本不会"。
+
+% TODO: 插入 re-injection 实验结果
+
+\subsection{Failure Cases}
+\label{app:subsec:causal_failure_cases}
+
+% 三组因果实验中干预无效的典型案例分析。
+% 预期效果：诚实地展示方法边界，增强可信度。
+
+% TODO: 插入失败案例分析

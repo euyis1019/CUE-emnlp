@@ -4,12 +4,12 @@
 % 中文: Models. 我们分析了 Qwen2.5-Coder，DeepSeek-Coder，Qwen2.5，CodeLlama 与 Llama，详细模型 URL 见附录。正文中我们重点研究 Qwen2.5-Coder-7B。
 
 \paragraph{Models.}
-We analyze Qwen2.5-Coder, DeepSeek-Coder, Qwen2.5, CodeLlama, and Llama; full model URLs are listed in \cref{app:setup}. Throughout the main text we focus on Qwen2.5-Coder-7B.
+We analyze Qwen2.5-Coder \citep{hui2024qwen25coder}, DeepSeek-Coder \citep{guo2024deepseekcoder}, Qwen2.5 \citep{yang2024qwen25}, CodeLlama \citep{roziere2023codellama}, and Llama \citep{llama3team2024}; full model URLs are listed in \cref{app:model_urls_and_setup}. Throughout the main text we focus on Qwen2.5-Coder-7B.
 
 % 中文: Benchmark. 为了研究内部代码推理，我们需要一组足够简单、能够隔离具体推理原语，但又足够丰富、能产生不同计算行为的任务。因此我们沿着 program analysis 中一个经典轴来设计六类任务：data flow 与 control flow。每个实例由短代码片段 C 和问题后缀 Q 组成，形成 source prompt S = [C; Q]。答案始终是单个数字 t* ∈ D = {0,1,...,9}，从而保证目标只对应一个 token，避免 multi-token decoding 带来的分析混淆。六类任务分别是：(1) Copying, (2) Computing, (3) Conditional, (4) Loop, (5) Loop-unrolled, (6) Short-circuit。代码片段保持短小，使逐层信号反映 reasoning primitive 而非长上下文效应；答案限定为单 digit token（0–9），为后续 diagnostic function 提供对齐的输出空间以支持跨层比较。完整细节与 cases 见附录。
 
 \paragraph{Benchmark.}
-To study internal code reasoning, we need tasks that are simple enough to isolate specific reasoning primitives yet rich enough to produce distinct computational behaviors. We therefore design six task families along a classical axis from program analysis: \textbf{data flow} versus \textbf{control flow} \citep{aho2006compilers, allen1970control, kildall1973unified, nielson1999principles}. Each instance consists of a short code snippet $C$ paired with a question suffix $Q$, forming a source prompt $S = [C;\,Q]$. The answer is always a single digit $t^* \in \mathcal{D} = \{0,1,\dots,9\}$, ensuring a one-token target and removing confounds from multi-token decoding. The six families are: (1)~Copying, (2)~Computing, (3)~Conditional, (4)~Loop, (5)~Loop-unrolled, and (6)~Short-circuit. Code snippets are kept intentionally short so that layer-wise signals reflect reasoning primitives rather than long-context effects; restricting the answer to a single digit token (0--9) provides a shared output space for the diagnostic functions defined below, enabling direct cross-layer comparison. Full details and example cases are given in \cref{app:benchmark}.
+To study internal code reasoning, we need tasks that are simple enough to isolate specific reasoning primitives yet rich enough to produce distinct computational behaviors. We therefore design six task families along a classical axis from program analysis: \textbf{data flow} versus \textbf{control flow} \citep{aho2006compilers, allen1970control, kildall1973unified, nielson1999principles}. Each instance consists of a short code snippet $C$ paired with a question suffix $Q$, forming a source prompt $S = [C;\,Q]$. The answer is always a single digit $t^* \in \mathcal{D} = \{0,1,\dots,9\}$, ensuring a one-token target and removing confounds from multi-token decoding. The six families are: (1)~Copying, (2)~Computing, (3)~Conditional, (4)~Loop, (5)~Loop-unrolled, and (6)~Short-circuit. Code snippets are kept intentionally short so that layer-wise signals reflect reasoning primitives rather than long-context effects; restricting the answer to a single digit token (0--9) provides a shared output space for the diagnostic functions defined below, enabling direct cross-layer comparison. Full details and example cases are given in \cref{app:benchmark_design_details}.
 
 % 中文: Dual Diagnostic Framework.
 % 给定一个具有 L 层的 decoder-only transformer M，记 h^ℓ 为模型处理 source prompt S 时第 ℓ 层 last token 的 hidden state。由于 last position attend 到全部前文，它可以作为模型在该深度已完成何种计算的紧凑表示。我们围绕 h^ℓ 定义两个诊断函数 Φ_P^ℓ, Φ_C^ℓ: R^d → Δ^{|T|}，将其映射到分类空间 T = D ⊔ {d̄} 上的概率单纯形，其中 d̄ 将所有非 digit token 聚合为一个 residual class（|T| = 11）。全文记 σ(·) ≜ softmax(·)。
@@ -22,14 +22,14 @@ Given a decoder-only transformer $\mathcal{M}$ with $L$ layers, let $\mathbf{h}^
 % 中文: 第一个诊断是 linear probing。对每一层训练一个逻辑分类器 Φ_P^ℓ(h^ℓ) = σ(W^ℓ h^ℓ + b^ℓ)，测试答案信息是否已经在 hidden state 中线性可读。这问的是一个必要条件：答案是否已经以简单形式存在？为避免 probe 被表面分布线索投机取巧，我们在十个 digit 类之外引入一个 near-OOD residual 类及对应训练样本（详见附录）。
 
 \paragraph{Linear Probing.}
-For each layer we train a logistic classifier
+For each layer we train a logistic classifier \citep{belinkov2022probing}
 %
 \begin{equation}
 \label{eq:probing}
 \Phi_{\mathrm{P}}^\ell(\mathbf{h}^\ell) = \sigma(W^\ell \mathbf{h}^\ell + \mathbf{b}^\ell),
 \end{equation}
 %
-which tests whether answer information is already linearly recoverable from the hidden state. This diagnostic asks a necessary-condition question: \emph{is the answer already present in a simple form?} To prevent the probe from exploiting superficial distributional cues, we augment the ten digit classes with a near-OOD residual class and corresponding training examples (details in \cref{app:probing}).
+which tests whether answer information is already linearly recoverable from the hidden state. This diagnostic asks a necessary-condition question: \emph{is the answer already present in a simple form?} To prevent the probe from exploiting superficial distributional cues, we augment the ten digit classes with a near-OOD residual class and corresponding training examples \citep{hewitt2019designing} (details in \cref{app:probing_training_details}).
 
 % 中文: 但信息存在不等于信息可用。为此我们构建第二个诊断：Context-Stripped Decoding (CSD)，基于 Patchscopes。具体做法是从 source run 中提取 h^ℓ，注入到一个只包含问题后缀的 target prompt T = Q 中，移除原始代码上下文 C。模型随后从第 ℓ+1 层到第 L−1 层继续前向传播，注意力上下文仅限于 T。为消除 target prompt 自身的 language prior confound，我们对 patching 后的 logit 做 baseline subtraction：
 % Φ_C^ℓ(h^ℓ) = σ(W_u ∘ LN ∘ F_{L-1} ∘ ⋯ ∘ F_{ℓ+1}(h^ℓ|_T) − z_b)|_T

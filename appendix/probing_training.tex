@@ -1,18 +1,18 @@
-% Appendix B: Linear Probing Training Details
+% Appendix C.1: Linear Probing Training Details
 
-\section{Linear Probing Training Details}
-\label{app:probing}
+\subsection{Linear Probing Training Details}
+\label{app:probing_training_details}
 
-This appendix details the training procedure for the linear probing diagnostic $\Phi_{\mathrm{P}}^\ell$ introduced in \cref{sec:method}. We train a \textbf{separate set of probes for each task family and each model}, so that probing accuracy reflects within-task linear separability without cross-task confounds.
+This subsection details the training procedure for the linear probing diagnostic $\Phi_{\mathrm{P}}^\ell$ introduced in \cref{sec:method}. We train a \textbf{separate set of probes for each task family and each model}, so that probing accuracy reflects within-task linear separability without cross-task confounds.
 
 % ------------------------------------------------------------------
-\subsection{Hidden State Extraction}
+\subsubsection{Hidden State Extraction}
 \label{app:subsec:probing_extraction}
 
 For each task instance with source prompt $S = [C;\, Q]$, we perform a single forward pass through the target model $\mathcal{M}$ and extract the hidden state $\mathbf{h}^\ell \in \mathbb{R}^d$ at the \textbf{last token position} of every layer $\ell \in \{0, 1, \dots, L{-}1\}$. Due to the causal attention mask, the last token position aggregates information from all preceding tokens, making it the natural locus for probing what the model ``knows'' at each layer.
 
 % ------------------------------------------------------------------
-\subsection{11-Class Classification Setup}
+\subsubsection{11-Class Classification Setup}
 \label{app:subsec:probing_classes}
 
 A standard probing setup for this benchmark would use 10-class classification over $\mathcal{D} = \{0, 1, \dots, 9\}$. We extend this to \textbf{11 classes} by introducing the residual class $\bar{d}$, which aggregates all non-single-digit outputs into a single category.
@@ -22,7 +22,7 @@ A standard probing setup for this benchmark would use 10-class classification ov
 \paragraph{Rationale for $\bar{d}$.} The residual class serves as an \emph{error sink}: if $\arg\max \Phi_{\mathrm{P}}^\ell(\mathbf{h}^\ell) = \bar{d}$, the probe indicates that no single digit is linearly separable in the activation space at that layer. This gives the probing diagnostic a three-valued interpretation at each layer: (1)~correct digit, (2)~wrong digit, (3)~not yet a digit. Without $\bar{d}$, the probe would be forced to assign probability mass to some digit even when the representation carries no digit-relevant signal, inflating false positives in early layers.
 
 % ------------------------------------------------------------------
-\subsection{Per-Layer Classifier Training}
+\subsubsection{Per-Layer Classifier Training}
 \label{app:subsec:probing_training}
 
 For each task family and each model, we train \textbf{one independent classifier per layer} $\ell$, denoted $\Phi_{\mathrm{P}}^\ell$. Each classifier is a logistic regression model (multinomial, L2-regularized):
@@ -56,19 +56,19 @@ Multi-class   & \texttt{multinomial}  & Joint optimization over all 11 classes \
 \paragraph{Why logistic regression?} A linear probe tests whether the target information is \textbf{linearly separable} in the representation space---the weakest geometric condition for information presence. Using a more powerful classifier (e.g., MLP) would conflate ``the information exists'' with ``a nonlinear transformation can extract it,'' weakening the interpretive value of probing as a necessary condition \citep{belinkov2022probing, hewitt2019designing}.
 
 % ------------------------------------------------------------------
-\subsection{Train/Test Split}
+\subsubsection{Train/Test Split}
 \label{app:subsec:probing_split}
 
 Within each task family, instances are randomly split 80/20 into training and test sets. The split is at the \textbf{instance level}: all $L$ hidden states from a given code instance belong to the same partition, preventing information leakage across layers. The \textbf{same test split} is used for both probing ($\Phi_{\mathrm{P}}^\ell$) and CSD ($\Phi_{\mathrm{C}}^\ell$), ensuring that the two diagnostics are evaluated on identical instances and their layer-wise agreement is computed on matched samples.
 
 % ------------------------------------------------------------------
-\subsection{Probing Accuracy}
+\subsubsection{Probing Accuracy}
 \label{app:subsec:probing_accuracy}
 
 Across all task families, model scales, and layers, the probes achieve a mean test accuracy of \textbf{98.86\%}, confirming that the 11-class linear probing setup reliably recovers the encoded digit (or its absence) from each layer's hidden state.
 
 % ------------------------------------------------------------------
-\subsection{Evaluation Metrics}
+\subsubsection{Evaluation Metrics}
 \label{app:subsec:probing_eval}
 
 For each layer $\ell$ and each test instance, we record:
