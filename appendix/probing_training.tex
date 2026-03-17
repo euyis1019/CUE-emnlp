@@ -23,7 +23,7 @@ For each task family and model, we train \textbf{one independent logistic regres
 %
 where $W^\ell \in \mathbb{R}^{11 \times d}$ and $\mathbf{b}^\ell \in \mathbb{R}^{11}$. Hyperparameters are listed in \cref{tab:probe_hyperparams}.
 
-\begin{table}[h]
+\begin{table}[H]
 \centering
 \resizebox{\columnwidth}{!}{%
 \begin{tabular}{lll}
@@ -53,7 +53,7 @@ We use a linear probe because it tests the weakest geometric condition---linear 
 To verify reliable convergence, we visualize training dynamics using SGD with partial fit (200 epochs) on Qwen2.5-Coder-7B, Computing task.
 \cref{fig:app:training_curves} shows train/test accuracy and loss curves for five representative layers. All layers converge within the first 50 epochs, with deeper layers achieving higher accuracy, consistent with progressive encoding through the brewing phase.
 
-\begin{figure}[h]
+\begin{figure}[H]
 \centering
 \includegraphics[width=\columnwidth]{figures/appendix/C_training_curves.png}
 \caption{Probing training curves (SGD, 200 epochs) for five representative layers of Qwen2.5-Coder-7B on the Computing task. All layers converge rapidly; deeper layers achieve higher accuracy.}
@@ -62,7 +62,7 @@ To verify reliable convergence, we visualize training dynamics using SGD with pa
 
 \cref{fig:app:training_heatmap} displays test accuracy and loss as heatmaps across all 28 layers and training epochs, with uniform convergence and no evidence of instability or overfitting.
 
-\begin{figure}[h]
+\begin{figure}[H]
 \centering
 \includegraphics[width=\columnwidth]{figures/appendix/C_training_curves_heatmap.png}
 \caption{Test accuracy (left) and test log loss (right) across all 28 layers and training epochs. The broadly uniform convergence pattern is consistent with linear probes being a reasonable diagnostic for this classification task.}

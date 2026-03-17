@@ -19,7 +19,7 @@ The flip rate at the FJC layer reaches \textbf{70.0\%}, compared with \textbf{18
 
 We skip all layers after FJC by decoding directly from $\mathbf{h}^{\mathrm{FJC}}$ via LayerNorm and the unembedding matrix, bypassing the tail layers hypothesized to destroy correct computations in Overprocessed samples.
 
-\begin{table}[h]
+\begin{table}[H]
 \centering
 \caption{Layer-skipping results by outcome group. Pre-skip accuracy is the standard model accuracy; post-skip accuracy is obtained by decoding from $\mathbf{h}^{\mathrm{FJC}}$.}
 \label{tab:app:layer_skipping}
@@ -73,7 +73,7 @@ As this analysis is observational, we treat sparsity as a representation-level c
 We test whether Unresolved samples contain partially usable computations by providing additional effective depth.
 The hidden state $\mathbf{h}^{L-1}$ from layer $L-1$ is injected into a fresh forward pass at layer $\ell_{\mathrm{inject}}$; this can be repeated $k$ times.
 
-\begin{table}[h]
+\begin{table}[H]
 \centering
 \caption{Re-injection rescue rates for Unresolved samples ($N=150$). $k$ denotes the number of re-injection rounds. The Resolved control group maintains 100\% accuracy throughout.}
 \label{tab:app:reinjection}
@@ -101,7 +101,7 @@ We extend activation patching to four tasks---Copying, Computing, Conditional, a
 \paragraph{Setup.}
 For each task we sample $N{=}150$ task-matched pairs and sweep the patching layer across an 11-layer window centred on the per-task mean FJC ($\mathrm{FJC}{-}5$ to $\mathrm{FJC}{+}5$).
 
-\begin{table}[h]
+\begin{table}[H]
 \centering
 \caption{Answer-flip rate (\%) at selected layer offsets relative to FJC across four task families (Qwen2.5-Coder-7B). Higher values indicate greater causal concentration of answer information at that depth.}
 \label{tab:app:cross_task_patching}
@@ -119,7 +119,7 @@ Loop          & 12 & 32 & \textbf{62} & 34 & 21 \\
 }
 \end{table}
 
-\begin{figure}[h]
+\begin{figure}[H]
 \centering
 \includegraphics[width=\columnwidth]{figures/appendix/E_cross_task_patching.png}
 \caption{Layer-wise answer-flip rate curves for four task families, aligned by mean FJC position. Copying exhibits the sharpest peak; control-flow tasks (Conditional, Loop) show broader sensitivity windows.}

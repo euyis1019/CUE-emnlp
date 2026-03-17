@@ -9,7 +9,7 @@
 We compare Qwen2.5-Coder-7B with Qwen2.5-7B (same architecture, $L{=}28$, no code-specialized training).
 \cref{tab:app:coder_vs_base_computing} reports results on Computing.
 
-\begin{table}[h]
+\begin{table}[H]
 \centering
 \caption{Coder vs.\ Base on Computing: outcome distribution and brewing
 layer positions for Qwen2.5-Coder-7B and Qwen2.5-7B ($L{=}28$).
@@ -33,7 +33,7 @@ However, normalized FPCL and FJC positions remain similar (FPCL: 34\% vs.\ 36\%;
 \paragraph{Cross-task generalization.}
 \cref{tab:app:coder_vs_base_all_tasks} extends the comparison to all six tasks.
 
-\begin{table}[h]
+\begin{table}[H]
 \centering
 \caption{Resolved rate (\%) for Qwen2.5-Coder-7B vs.\ Qwen2.5-7B across
 all task families.}
@@ -61,7 +61,7 @@ The Pearson correlation between normalized FJC positions of Coder-7B and Base-7B
 
 \cref{tab:app:scaling_computing} reports how outcome distributions and brewing dynamics change across model scale (0.5B--14B) on Computing.
 
-\begin{table}[h]
+\begin{table}[H]
 \centering
 \caption{Scaling trends on Computing for Qwen2.5-Coder (0.5B--14B).
 $L$ denotes the number of transformer layers; norm.\ $\Delta_{\mathrm{brew}}$
@@ -101,7 +101,7 @@ Several trends emerge:
 To test generalization beyond the Qwen family, we apply the same pipeline to DeepSeek-Coder-6.7B, CodeLlama-7B, and Llama-3.1-8B.
 \cref{tab:app:cross_arch_computing} reports Computing-task results.
 
-\begin{table}[h]
+\begin{table}[H]
 \centering
 \caption{Cross-architecture results on Computing.  All three non-Qwen
 models exhibit the four-way outcome split and identifiable FPCL/FJC
@@ -133,9 +133,9 @@ Three findings generalize across architectures:
   Code-specialized models achieve higher Resolved rates than general-purpose Llama-3.1-8B, paralleling the Coder-vs-Base gap (\cref{app:subsec:coder_vs_base}), while the relative FPCL/FJC ordering across tasks remains stable.
 \end{itemize}
 
-\begin{figure}[h]
+\begin{figure}[H]
 \centering
-\includegraphics[width=0.65\linewidth]{figures/appendix/H_cross_arch_brewing.png}
+\includegraphics[width=\columnwidth]{figures/appendix/H_cross_arch_brewing.png}
 \caption{Layer-wise probing accuracy (dashed) and CSD correctness (solid)
 on Computing for three non-Qwen architectures. All three models show a
 visible separation between probing onset and CSD commitment, consistent
