@@ -53,12 +53,12 @@ Aggregating the observations above, a broader pattern emerges. Data-flow-dominan
 
 % 中文: 上述 task-dependent 模式并不只属于一个模型。我们在 Qwen2.5-Coder 与 Qwen2.5（同架构，code-specialized vs. general-purpose）之间、以及 0.5B 到 14B 的规模范围内，都观察到相同的 brewing-to-resolution 结构。但 outcome 分布并不是在所有维度上同步变化——这暴露了一个清晰的 mechanism 与 capability 的分离。
 
-\begin{figure*}[t]
+\begin{figure}[t]
 \centering
-\includegraphics[width=\textwidth]{brewing_stability.png}
+\includegraphics[width=\columnwidth]{brewing_stability.png}
 \caption{Brewing structure stability across scaling, training, and architecture. (a) KDE of normalized First Joint Correct Layer (FJC) positions. (b) Violin plots of normalized brewing duration, showing consistent brewing scaffolds despite varying capability.}
 \label{fig:brewing_stability}
-\end{figure*}
+\end{figure}
 
 The task-dependent patterns described above are not confined to a single model. We observe the same brewing-to-resolution structure across Qwen2.5-Coder and Qwen2.5 (matched architecture, code-specialized vs.\ general-purpose) and across the 0.5B--14B scale range. Yet outcome distributions do not shift uniformly along all dimensions---this exposes a clear dissociation between mechanism and capability.
 
