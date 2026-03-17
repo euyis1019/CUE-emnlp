@@ -36,6 +36,7 @@
 \usepackage{subcaption}
 \usepackage[capitalise,noabbrev]{cleveref}
 \usepackage{listings}
+\usepackage{titletoc}       % local TOC for appendix
 
 % Code listing style for benchmark examples
 \lstset{
@@ -106,50 +107,9 @@
 
 \vspace{1em}
 
-\newcommand{\appsec}[2]{\hyperref[#1]{\textbf{#2}}}
-\newcommand{\appsubsec}[2]{\hyperref[#1]{#2}}
-
-\noindent
-\begin{tabular}{@{}l@{\;\;}l@{}}
-  \appsec{app:model_urls_and_setup}{A} & \appsec{app:model_urls_and_setup}{Model URLs and Setup} \\[6pt]
-  %
-  \appsec{app:benchmark_design_details}{B} & \appsec{app:benchmark_design_details}{Benchmark Design Details} \\
-  & \quad \appsubsec{app:subsec:data_flow}{B.1\; Data Flow Tasks} \\
-  & \quad \appsubsec{app:subsec:control_flow}{B.2\; Control Flow Tasks} \\
-  & \quad \appsubsec{app:subsec:task_spectrum}{B.3\; Task Spectrum Summary} \\
-  & \quad \appsubsec{app:subsec:answer_dist}{B.4\; Answer Distribution Control} \\[6pt]
-  %
-  \appsec{app:diagnostic_framework_details}{C} & \appsec{app:diagnostic_framework_details}{Diagnostic Framework Details} \\
-  & \quad \appsubsec{app:probing_training_details}{C.1\; Linear Probing Training Details} \\
-  & \quad \appsubsec{app:subsec:csd_implementation}{C.2\; CSD Implementation Details} \\[6pt]
-  %
-  \appsec{app:outcome_distribution_statistics}{D} & \appsec{app:outcome_distribution_statistics}{Outcome Definition and Statistics} \\
-  & \quad \appsubsec{app:subsec:outcome_results_by_task}{D.1\; Outcome Distributions by Task and Model} \\
-  & \quad \appsubsec{app:subsec:fpcl_fjc_layer_positions}{D.2\; FPCL and FJC Layer Positions} \\
-  & \quad \appsubsec{app:subsec:fjc_correctness_correlation}{D.3\; FJC Existence and Final Correctness} \\[6pt]
-  %
-  \appsec{app:causal_validation_details}{E} & \appsec{app:causal_validation_details}{Causal Validation Experiments} \\
-  & \quad \appsubsec{app:subsec:activation_patching_fjc}{E.1\; Activation Patching at FJC} \\
-  & \quad \appsubsec{app:subsec:layer_skipping_overprocessed}{E.2\; Layer Skipping for Overprocessed} \\
-  & \quad \appsubsec{app:subsec:late_layer_sparsity_overprocessed}{E.3\; Late-Layer Hidden-State Sparsity in Overprocessed} \\
-  & \quad \appsubsec{app:subsec:reinjection_unresolved}{E.4\; Re-injection for Unresolved} \\
-  & \quad \appsubsec{app:subsec:causal_failure_cases}{E.5\; Failure Cases} \\[6pt]
-  %
-  \appsec{app:ground_truth_free_discrimination}{F} & \appsec{app:ground_truth_free_discrimination}{GT-free Outcome Signals} \\
-  & \quad \appsubsec{app:subsec:gtfree_signal_definitions}{F.1\; Signal Definitions} \\
-  & \quad \appsubsec{app:subsec:gtfree_outcome_signatures}{F.2\; Outcome-Specific Signal Characteristics} \\[6pt]
-  %
-  \appsec{app:cross_task_analysis}{G} & \appsec{app:cross_task_analysis}{Cross-Task Analysis} \\
-  & \quad \appsubsec{app:subsec:outcome_fingerprints_full}{G.1\; Outcome Fingerprints: Full Data} \\
-  & \quad \appsubsec{app:subsec:computing_density_sweep}{G.2\; Computing Density Sweep} \\
-  & \quad \appsubsec{app:subsec:per_difficulty_breakdown}{G.3\; Per-Difficulty-Level Breakdown} \\
-  & \quad \appsubsec{app:subsec:brewing_dynamics_comparison}{G.4\; Brewing Dynamics Comparison} \\[6pt]
-  %
-  \appsec{app:cross_architecture_and_scaling}{H} & \appsec{app:cross_architecture_and_scaling}{Cross-Architecture and Scaling} \\
-  & \quad \appsubsec{app:subsec:coder_vs_base}{H.1\; Coder vs.\ Base Paired Analysis} \\
-  & \quad \appsubsec{app:subsec:scaling_trends}{H.2\; Scaling Trends} \\
-  & \quad \appsubsec{app:subsec:cross_architecture_robustness}{H.3\; Cross-Architecture Robustness} \\
-\end{tabular}
+\setcounter{tocdepth}{2}
+\startcontents[appendix]
+\printcontents[appendix]{}{1}{}
 
 \twocolumn
 \clearpage
