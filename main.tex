@@ -36,6 +36,7 @@
 \usepackage{subcaption}
 \usepackage[capitalise,noabbrev]{cleveref}
 \usepackage{listings}
+\usepackage{etoc}          % local table of contents for appendix
 
 % Code listing style for benchmark examples
 \lstset{
@@ -100,18 +101,12 @@
 \appendix
 
 \section*{Appendices}
+\label{sec:appendix}
 
-\noindent
-\begin{tabular}{@{}ll@{}}
-\cref{app:model_urls_and_setup} & Model URLs and Setup \\
-\cref{app:benchmark_design_details} & Benchmark Design Details \\
-\cref{app:diagnostic_framework_details} & Diagnostic Framework Details \\
-\cref{app:outcome_distribution_statistics} & Outcome Definition and Statistics \\
-\cref{app:causal_validation_details} & Causal Validation Experiments \\
-\cref{app:ground_truth_free_discrimination} & GT-free Outcome Signals \\
-\cref{app:cross_task_analysis} & Cross-Task Analysis \\
-\cref{app:cross_architecture_and_scaling} & Cross-Architecture and Scaling \\
-\end{tabular}
+% Local TOC: show only section-level entries (depth 1) for the appendix
+\etocsettocstyle{\noindent\textbf{Table of Contents}\par\smallskip}{}
+\etocsettocdepth{1}          % sections only, no subsections
+\localtableofcontents
 
 \vspace{1em}
 
