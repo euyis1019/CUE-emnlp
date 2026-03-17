@@ -12,7 +12,7 @@ Patching replaces the last-token hidden state $\mathbf{h}^\ell$ at layer $\ell$ 
 We measure the \emph{answer-flip rate}: the fraction of samples whose final prediction changes to the paired sample's answer.
 
 A layer-wise sweep reveals a clear peak around the mean FJC position.
-The flip rate at the FJC layer reaches \textbf{70.0\%}, compared with \textbf{18.7\%} at pre-brewing layers (layer 17) and \textbf{30.7\%} at post-resolution layers (layer 27), confirming that FJC serves as a causally privileged bottleneck for answer-relevant information.
+The flip rate at the FJC layer reaches \textbf{70.0\%}, compared with \textbf{18.7\%} at pre-brewing layers (layer 17) and \textbf{30.7\%} at post-resolution layers (layer 27), FJC thus serves as a causally privileged bottleneck for answer-relevant information.
 
 \subsection{Layer Skipping for Overprocessed}
 \label{app:subsec:layer_skipping_overprocessed}
@@ -128,7 +128,7 @@ Loop          & 12 & 32 & \textbf{62} & 34 & 21 \\
 
 \paragraph{Analysis.}
 \cref{tab:app:cross_task_patching} and \cref{fig:app:cross_task_patching} reveal two patterns.
-First, all four tasks show a clear flip-rate peak at FJC, confirming that the causal bottleneck generalises beyond the anchor setting.
+First, all four tasks show a clear flip-rate peak at FJC, so the causal bottleneck generalises beyond the anchor setting.
 Second, \emph{peak sharpness} differs systematically: Copying exhibits the narrowest window (answer crystallises abruptly once variable binding resolves), while Conditional and Loop show broader windows (answer depends on multi-layer evaluation of branching or iteration), with Computing in between.
 This mirrors the distinction between stabilisation and commitment bottlenecks discussed in \S4, providing causal evidence that different code primitives induce structurally distinct processing patterns.
 
@@ -139,10 +139,10 @@ This mirrors the distinction between stabilisation and commitment bottlenecks di
 Approximately 30\% of samples show low flip rates at FJC, likely because answer information is distributed across multiple layers or encoded in dimensions not captured by last-token patching.
 
 \paragraph{Layer-skipping failures.}
-Among Overprocessed samples, 26.7\% remain incorrect after skipping, suggesting that degradation may begin before or at FJC in some cases.
+Among Overprocessed samples, 26.7\% remain incorrect after skipping, degradation may begin before or at FJC in some cases.
 
 \paragraph{Re-injection failures.}
 The 53.3\% never-rescued Unresolved samples likely represent genuine capability gaps rather than insufficient depth.
 
 \paragraph{Summary.}
-These failure modes confirm that our taxonomy captures dominant patterns but is not a perfect partition---some samples resist clean categorization. We view this transparency about limitations as strengthening the framework's credibility.
+These failure modes indicate that our taxonomy captures dominant patterns but is not a perfect partition---some samples resist clean categorization. These boundary cases warrant further investigation.

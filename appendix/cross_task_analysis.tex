@@ -29,7 +29,7 @@ Uniquely difficult: all four outcomes present in substantial proportions. Overpr
 Loop Unrolled & 298 & 89.3 & 8.1 & 2.7 & 0.0 &
 Near-zero UR: the model always forms a convergence point. Residual MR (2.7\%) arises at high iteration counts. \\
 Loop & 408 & 84.8 & 10.8 & 3.9 & 0.5 &
-Similar to Loop Unrolled but with slightly elevated OT and a small UR fraction (0.5\%), suggesting that syntactic loop structure adds marginal processing difficulty. \\
+Similar to Loop Unrolled but with slightly elevated OT and a small UR fraction (0.5\%), syntactic loop structure adds marginal processing difficulty. \\
 Conditional & 542 & 82.7 & 11.4 & 4.4 & 1.5 &
 OT and MR rise together at high nesting depths; UR appears only at depth 3, indicating that deeply nested branches occasionally prevent convergence entirely. \\
 Short-circuit & 346 & 86.1 & 10.4 & 3.5 & 0.0 &
@@ -41,7 +41,7 @@ Weighted avg. & 2001 & 79.2 & 15.1 & 4.3 & 1.3 & --- \\
 }
 \end{table*}
 
-\textbf{Key observation.}
+\paragraph{Computing as the sole four-way outlier.}
 Computing is the only task where all four outcomes appear in substantial proportions.
 The remaining five tasks share a common signature: Resolved $>$ 79\%, Overprocessed as the primary failure mode (8--21\%), and Misresolved and Unresolved together below 6\%.
 
@@ -74,8 +74,8 @@ $\rho$ & $N$ & Res.\% & OT\% & MR\% & UR\% & $\overline{\Delta}_{\mathrm{brew}}$
 }
 \end{table}
 
-\textbf{Analysis.}
-Even at $\rho{=}0$, the Resolved rate is lower than structurally similar control-flow tasks, confirming that multi-hop variable tracking itself is a bottleneck.
+\paragraph{Failure mode shift with arithmetic density.}
+Even at $\rho{=}0$, the Resolved rate is lower than structurally similar control-flow tasks; multi-hop variable tracking itself is a bottleneck.
 As $\rho$ increases, the failure character shifts: OT dominates at $\rho{=}0$, whereas MR and UR grow disproportionately at $\rho{=}1.0$, indicating that arithmetic demands \textbf{change the failure mechanism} from late-layer corruption to inability to reach the correct answer.
 The brewing duration $\overline{\Delta}_{\mathrm{brew}}$ also contracts, consistent with the probe detecting partial (but incorrect) information earlier.
 
@@ -101,7 +101,7 @@ Steps & $N$ & Res.\% & OT\% & MR\% & UR\% & $\overline{\mathrm{FPCL}}$ & $\overl
 }
 \end{table}
 
-\textbf{Analysis.}
+\paragraph{Chain length as independent difficulty factor.}
 Increasing chain length degrades outcomes even within fixed $\rho$ strata, demonstrating that sequential depth is an independent difficulty factor.
 FPCL shifts later with longer chains while FJC remains stable, compressing the brewing window $\Delta_{\mathrm{brew}}$---mirroring the $\rho$-sweep pattern.
 
@@ -161,7 +161,7 @@ Task & Difficulty & $N$ & Res.\% & OT\% & MR\% & UR\% \\
 }
 \end{table*}
 
-\textbf{Key findings.}
+\paragraph{Per-task failure signatures across difficulty.}
 
 \begin{itemize}
 \item \textbf{Copying} exhibits OT as the sole failure mode at every difficulty level, with zero MR/UR---pure variable lookup always converges.
@@ -172,7 +172,7 @@ Task & Difficulty & $N$ & Res.\% & OT\% & MR\% & UR\% \\
 
 \item \textbf{Short-circuit} maintains zero UR across all difficulty levels, consistent with the binary nature of the task.
 
-\item \textbf{Loop vs.\ Loop Unrolled} differ in degradation shape: Loop exhibits a non-monotonic U-shaped pattern (dipping at iteration$\,{=}\,2$), while Loop Unrolled degrades more steeply at iteration$\,{=}\,4$, suggesting that syntactic loop structure provides a processing scaffold that partially buffers against iteration-count difficulty.
+\item \textbf{Loop vs.\ Loop Unrolled} differ in degradation shape: Loop exhibits a non-monotonic U-shaped pattern (dipping at iteration$\,{=}\,2$), while Loop Unrolled degrades more steeply at iteration$\,{=}\,4$, indicating that syntactic loop structure provides a processing scaffold that partially buffers against iteration-count difficulty.
 \end{itemize}
 
 
@@ -231,7 +231,7 @@ Task & Difficulty & $\overline{\mathrm{FPCL}}$ & $\overline{\mathrm{FJC}}$ & FJC
 }
 \end{table*}
 
-\textbf{Analysis.}
+\paragraph{Stable scaffold, variable capability.}
 Three patterns emerge:
 
 \begin{enumerate}

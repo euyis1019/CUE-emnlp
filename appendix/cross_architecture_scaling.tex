@@ -27,7 +27,7 @@ Qwen2.5-7B       & 20.5 & 64.1 & 3.8 & 11.5 & 10.1 (36\%) & 20.5 (73\%) & 10.4 (
 }
 \end{table}
 
-Code-specialized training substantially improves the Resolved rate (33.5\% vs.\ 20.5\%), confirming enhanced arithmetic \emph{capability}.
+Code-specialized training substantially improves the Resolved rate (33.5\% vs.\ 20.5\%), a direct reflection of enhanced arithmetic \emph{capability}.
 However, normalized FPCL and FJC positions remain similar (FPCL: 34\% vs.\ 36\%; FJC: 74\% vs.\ 73\%), indicating that the processing \emph{schedule} is architecture-determined rather than training-data-determined.
 
 \paragraph{Cross-task generalization.}
@@ -53,7 +53,7 @@ Short-circuit    & 86.1 & 78 \\
 \end{table}
 
 Code-specialized training consistently improves Resolved rates, with the largest gains on computationally demanding tasks.
-The Pearson correlation between normalized FJC positions of Coder-7B and Base-7B across tasks is $r = 0.90$ ($p = 0.014$, $n{=}6$), with a mean FJC shift of only 0.18 layers (0.6\% of total depth), confirming that the commitment layer is architecture-dependent.
+The Pearson correlation between normalized FJC positions of Coder-7B and Base-7B across tasks is $r = 0.90$ ($p = 0.014$, $n{=}6$), with a mean FJC shift of only 0.18 layers (0.6\% of total depth), the commitment layer is thus architecture-dependent.
 
 
 \subsection{Scaling Trends}
@@ -124,7 +124,7 @@ Three findings generalize across architectures:
 
 \begin{itemize}
 \item \textbf{Brewing universally exists.}
-  All models exhibit nonzero $\Delta_{\mathrm{brew}}$, confirming that the brewing phenomenon is not Qwen-specific.
+  All models exhibit nonzero $\Delta_{\mathrm{brew}}$, the brewing phenomenon is not Qwen-specific.
 
 \item \textbf{Task-dependent FPCL ordering is preserved.}
   Computing consistently shows a later FPCL than control-flow tasks across all architectures, mirroring the Qwen-family pattern (\cref{app:subsec:fpcl_fjc_layer_positions}).
