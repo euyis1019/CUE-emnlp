@@ -23,6 +23,40 @@
 
 % TODO: 插入 layer skipping 实验结果
 
+\subsection{Late-Layer Hidden-State Sparsity in Overprocessed Samples}
+\label{app:subsec:late_layer_sparsity_overprocessed}
+
+As a descriptive complement to the layer-skipping intervention, we also examine whether Overprocessed samples exhibit a distinct late-layer representation geometry.
+Using the full Qwen2.5-Coder-7B Computing dataset ($N=1800$), we aggregate two standard sparsity measures from the last-token hidden state at every layer: the Gini index and Hoyer sparsity.
+
+\cref{fig:app:hidden_state_sparsity} shows that the two measures peak at different depths.
+The Gini index rises earlier and reaches its maximum around the middle-to-late layers, whereas Hoyer sparsity stays relatively moderate until the final block and then spikes sharply near layer 26.
+This temporal separation is consistent with a two-stage picture in which representations first become more concentrated and later undergo a stronger sparsification during the final decoding-relevant phase.
+
+To test whether this late sparsification is specifically associated with degradation after internal success, we compare Overprocessed and non-Overprocessed valid samples at layers 24--27.
+As shown in \cref{fig:app:hoyer_ot_vs_nonot}, Overprocessed samples have consistently higher Hoyer sparsity at all four late layers, with the largest gap at layer 26 where global Hoyer also peaks.
+Because this analysis is observational rather than interventional, we do not treat sparsity as causal evidence.
+Instead, we view it as a representation-level correlate of overprocessing: once a correct answer has become jointly available, the final degradation phase is accompanied by a measurable compression-like shift in hidden-state geometry.
+
+\begin{figure*}[t]
+\centering
+\begin{subfigure}[t]{0.58\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/appendix/causal_hidden_state_sparsity.png}
+    \caption{Global layer-wise Gini and Hoyer curves on the full Qwen2.5-Coder-7B Computing set.}
+    \label{fig:app:hidden_state_sparsity}
+\end{subfigure}
+\hfill
+\begin{subfigure}[t]{0.38\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/appendix/causal_hoyer_ot_vs_nonot.png}
+    \caption{Late-layer Hoyer sparsity for Overprocessed vs.\ non-Overprocessed valid samples.}
+    \label{fig:app:hoyer_ot_vs_nonot}
+\end{subfigure}
+\caption{Late-layer hidden-state sparsity as a descriptive correlate of Overprocessed trajectories in the anchor setting (Qwen2.5-Coder-7B, Computing).}
+\label{fig:app:overprocessed_sparsity}
+\end{figure*}
+
 \subsection{Re-injection for Unresolved}
 \label{app:subsec:reinjection_unresolved}
 

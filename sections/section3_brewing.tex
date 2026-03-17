@@ -73,6 +73,7 @@ Following causal localization methods \citep{meng2022locating, geiger2023causal}
 % 中文: Overprocessed 的定义蕴含正确计算已形成但被后续层破坏。若如此，跳过 FJC 之后的尾部层、直接从 $\mathbf{h}^{\mathrm{FJC}}$ 解码应当恢复正确答案。
 \paragraph{Layer skipping for Overprocessed.}
 The definition of Overprocessed implies that a correct computation was formed but subsequently destroyed---akin to the overthinking phenomenon observed in prior work \citep{halawi2024overthinking, schuster2022confident}. If so, skipping the tail layers after FJC and decoding directly from $\mathbf{h}^{\mathrm{FJC}}$ should recover the correct answer. Result: on Overprocessed samples, skipping restores correctness in [YY]\% of cases; the same operation on already-Resolved samples degrades accuracy by only [Y.Y]\%---the effect is sharply outcome-specific.
+Consistent with this interpretation, late-layer hidden states also exhibit a distinct sparsity pattern. We find that Hoyer sparsity rises sharply in the final layers, and that Overprocessed samples remain more sparse than non-Overprocessed samples throughout this late-layer region (\cref{app:subsec:late_layer_sparsity_overprocessed}). This indicates that overprocessing is not only a behavioral ``right-then-wrong'' phenomenon, but is also accompanied by a measurable compression-like trend in representation geometry.
 
 % 中文: 如果 Unresolved 意味着"没算完"而非"根本不会"，那么给模型额外的有效深度应能救回部分样本。我们将后期 hidden state 重新注入一次新的前向传播。
 \paragraph{Re-injection for Unresolved.}
