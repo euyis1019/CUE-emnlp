@@ -36,7 +36,6 @@
 \usepackage{subcaption}
 \usepackage[capitalise,noabbrev]{cleveref}
 \usepackage{listings}
-\usepackage{etoc}          % local table of contents for appendix
 
 % Code listing style for benchmark examples
 \lstset{
@@ -97,18 +96,31 @@
 \bibliography{custom}
 
 % --- Appendix ---
-\newpage
+\clearpage
 \appendix
 
-\section*{Appendices}
-\label{sec:appendix}
+\begin{center}
+  {\Large\bfseries Appendices}
+\end{center}
 
-% Local TOC: show only section-level entries (depth 1) for the appendix
-\etocsettocstyle{\noindent\textbf{Table of Contents}\par\smallskip}{}
-\etocsettocdepth{1}          % sections only, no subsections
-\localtableofcontents
+\vspace{0.5em}
 
-\newpage
+\noindent\textbf{Table of Contents}
+\vspace{0.3em}
+
+\noindent
+\begin{tabular}{@{}l@{\quad}l@{}}
+  \hyperref[app:model_urls_and_setup]{A} & \hyperref[app:model_urls_and_setup]{Model URLs and Setup} \\
+  \hyperref[app:benchmark_design_details]{B} & \hyperref[app:benchmark_design_details]{Benchmark Design Details} \\
+  \hyperref[app:diagnostic_framework_details]{C} & \hyperref[app:diagnostic_framework_details]{Diagnostic Framework Details} \\
+  \hyperref[app:outcome_distribution_statistics]{D} & \hyperref[app:outcome_distribution_statistics]{Outcome Definition and Statistics} \\
+  \hyperref[app:causal_validation_details]{E} & \hyperref[app:causal_validation_details]{Causal Validation Experiments} \\
+  \hyperref[app:ground_truth_free_discrimination]{F} & \hyperref[app:ground_truth_free_discrimination]{GT-free Outcome Signals} \\
+  \hyperref[app:cross_task_analysis]{G} & \hyperref[app:cross_task_analysis]{Cross-Task Analysis} \\
+  \hyperref[app:cross_architecture_and_scaling]{H} & \hyperref[app:cross_architecture_and_scaling]{Cross-Architecture and Scaling} \\
+\end{tabular}
+
+\clearpage
 
 \input{sections/appendix}
 
