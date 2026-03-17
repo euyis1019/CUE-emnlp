@@ -3,7 +3,29 @@
 \section{Model URLs and Setup}
 \label{app:model_urls_and_setup}
 
-% 列出所有分析模型的 HuggingFace URLs、规模配置、推理硬件与精度等实验环境信息。
-% 预期效果：读者可直接复现实验的模型选择与环境配置。
+All models used in this work are publicly available on Hugging Face. We download the original pre-trained weights without further fine-tuning or quantization.
 
-% TODO: 填入具体模型 URL 表格
+\paragraph{Primary model family (anchor + scaling).}
+Our main analyses use the Qwen2.5-Coder series \citep{hui2024qwen25coder} spanning five scales, paired with the general-purpose Qwen2.5 counterparts \citep{yang2024qwen25} of the same sizes:
+
+\begin{itemize}[nosep,leftmargin=1.5em]
+  \item \texttt{Qwen/Qwen2.5-Coder-0.5B} \quad\url{https://huggingface.co/Qwen/Qwen2.5-Coder-0.5B}
+  \item \texttt{Qwen/Qwen2.5-Coder-1.5B} \quad\url{https://huggingface.co/Qwen/Qwen2.5-Coder-1.5B}
+  \item \texttt{Qwen/Qwen2.5-Coder-3B} \quad\url{https://huggingface.co/Qwen/Qwen2.5-Coder-3B}
+  \item \texttt{Qwen/Qwen2.5-Coder-7B} \quad\url{https://huggingface.co/Qwen/Qwen2.5-Coder-7B}
+  \item \texttt{Qwen/Qwen2.5-Coder-14B} \quad\url{https://huggingface.co/Qwen/Qwen2.5-Coder-14B}
+  \item \texttt{Qwen/Qwen2.5-0.5B} \quad\url{https://huggingface.co/Qwen/Qwen2.5-0.5B}
+  \item \texttt{Qwen/Qwen2.5-1.5B} \quad\url{https://huggingface.co/Qwen/Qwen2.5-1.5B}
+  \item \texttt{Qwen/Qwen2.5-3B} \quad\url{https://huggingface.co/Qwen/Qwen2.5-3B}
+  \item \texttt{Qwen/Qwen2.5-7B} \quad\url{https://huggingface.co/Qwen/Qwen2.5-7B}
+  \item \texttt{Qwen/Qwen2.5-14B} \quad\url{https://huggingface.co/Qwen/Qwen2.5-14B}
+\end{itemize}
+
+\paragraph{Cross-architecture validation.}
+To verify that our findings generalize beyond the Qwen family, we additionally analyze:
+
+\begin{itemize}[nosep,leftmargin=1.5em]
+  \item \texttt{deepseek-ai/deepseek-coder-6.7b-base} \quad\url{https://huggingface.co/deepseek-ai/deepseek-coder-6.7b-base}
+  \item \texttt{codellama/CodeLlama-7b-hf} \quad\url{https://huggingface.co/codellama/CodeLlama-7b-hf}
+  \item \texttt{meta-llama/Llama-3.1-8B} \quad\url{https://huggingface.co/meta-llama/Llama-3.1-8B}
+\end{itemize}
