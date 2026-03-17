@@ -55,38 +55,7 @@ Multi-class   & \texttt{multinomial}  & Joint optimization over all 11 classes \
 
 \paragraph{Why logistic regression?} A linear probe tests whether the target information is \textbf{linearly separable} in the representation space---the weakest geometric condition for information presence. Using a more powerful classifier (e.g., MLP) would conflate ``the information exists'' with ``a nonlinear transformation can extract it,'' weakening the interpretive value of probing as a necessary condition \citep{belinkov2022probing, hewitt2019designing}.
 
-% ------------------------------------------------------------------
-\subsubsection{Train/Test Split}
-\label{app:subsec:probing_split}
+\paragraph{Train/test split.} Within each task family, instances are randomly split 80/20 into training and test sets. The split is at the \textbf{instance level}: all $L$ hidden states from a given code instance belong to the same partition, preventing information leakage across layers. The \textbf{same test split} is used for both probing ($\Phi_{\mathrm{P}}^\ell$) and CSD ($\Phi_{\mathrm{C}}^\ell$), ensuring that the two diagnostics are evaluated on identical instances and their layer-wise agreement is computed on matched samples.
 
-Within each task family, instances are randomly split 80/20 into training and test sets. The split is at the \textbf{instance level}: all $L$ hidden states from a given code instance belong to the same partition, preventing information leakage across layers. The \textbf{same test split} is used for both probing ($\Phi_{\mathrm{P}}^\ell$) and CSD ($\Phi_{\mathrm{C}}^\ell$), ensuring that the two diagnostics are evaluated on identical instances and their layer-wise agreement is computed on matched samples.
+\paragraph{Probing accuracy.} Across all task families, model scales, and layers, the probes achieve a mean test accuracy of \textbf{98.86\%}, confirming that the 11-class linear probing setup reliably recovers the encoded digit (or its absence) from each layer's hidden state.
 
-% ------------------------------------------------------------------
-\subsubsection{Probing Accuracy}
-\label{app:subsec:probing_accuracy}
-
-Across all task families, model scales, and layers, the probes achieve a mean test accuracy of \textbf{98.86\%}, confirming that the 11-class linear probing setup reliably recovers the encoded digit (or its absence) from each layer's hidden state.
-
-% ------------------------------------------------------------------
-\subsubsection{Evaluation Metrics}
-\label{app:subsec:probing_eval}
-
-For each layer $\ell$ and each test instance, we record:
-\begin{itemize}
-    \item $\hat{t}_{\mathrm{P}}^\ell = \arg\max \Phi_{\mathrm{P}}^\ell(\mathbf{h}^\ell)$: the probe's predicted class.
-    \item Whether $\hat{t}_{\mathrm{P}}^\ell = t^*$ (correct), $\hat{t}_{\mathrm{P}}^\ell \in \mathcal{D} \setminus \{t^*\}$ (wrong digit), or $\hat{t}_{\mathrm{P}}^\ell = \bar{d}$ (non-digit).
-\end{itemize}
-
-The \textbf{First Probing Correct Layer (FPCL)} is defined as:
-%
-\begin{equation}
-\mathrm{FPCL}(S) = \min \{ \ell \mid \hat{t}_{\mathrm{P}}^\ell = t^* \}
-\end{equation}
-
-The \textbf{Brewing Duration} $\Delta$ is the gap between FPCL and the First Correct Layer of CSD:
-%
-\begin{equation}
-\Delta(S) = \mathrm{FCL}(S) - \mathrm{FPCL}(S)
-\end{equation}
-
-$\Delta > 0$ indicates that the information exists in the representation (the probe can read it) before the model's own decoding pathway can access it---the hallmark of \textbf{Information Brewing}.
